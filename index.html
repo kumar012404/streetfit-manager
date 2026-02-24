@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreetFit | Business Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+    <div class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </div>
+    <div class="mobile-header-fix">
+        <div class="header-spacer"></div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; color: var(--primary);">StreetFit</h2>
+        <div class="profile-container">
+            <div class="profile-btn" onclick="document.getElementById('userRoleBadgeMobile').classList.toggle('show')">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div id="userRoleBadgeMobile" class="badge badge-pending">Partner (Guest)</div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="brand-area" style="margin-bottom: 2rem; padding: 0 1rem;">
+                <h2 style="color: white; font-size: 1.25rem;">StreetFit</h2>
+            </div>
+            <a href="index.html" class="nav-link active"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="contributions.html" class="nav-link"><i class="fas fa-hand-holding-usd"></i>
+                Contributions</a>
+            <a href="expenses.html" class="nav-link"><i class="fas fa-receipt"></i> Expenses</a>
+            <a href="plans.html" class="nav-link"><i class="fas fa-tasks"></i> Plans</a>
+
+            <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--border);">
+                <!-- Partner Login -->
+                <a href="auth.html" id="adminLoginBtn" class="btn btn-ghost">
+                    <i class="fas fa-users"></i> Partner Login
+                </a>
+                <a href="auth.html" id="adminPortalBtn" class="btn btn-ghost">
+                    <i class="fas fa-user-shield"></i> Admin Access
+                </a>
+                <button id="logoutBtn" onclick="window.auth.logout()" class="btn btn-ghost hidden"
+                    style="color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="flex-between" style="margin-bottom: 2rem;">
+                <h1>Dashboard</h1>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button class="btn btn-ghost admin-only hidden"
+                        style="width: auto; padding: 0.5rem; color: var(--accent);" onclick="showModal('reportModal')">
+                        <i class="fas fa-file-pdf"></i> <span class="hide-mobile">Generate Report</span>
+                    </button>
+                    <a href="auth.html" id="headerLoginBtn" class="btn btn-primary hidden"
+                        style="width: auto; padding: 0.5rem 1rem;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <div class="profile-container hide-mobile">
+                        <div class="profile-btn"
+                            onclick="document.getElementById('userRoleBadge').classList.toggle('show')">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div id="userRoleBadge" class="badge badge-pending">Partner (Guest)</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Grid (6 cards total for 3 rows x 2 columns on mobile) -->
+            <div class="stats-grid">
+                <div class="card stat-card">
+                    <div class="flex-between">
+                        <h3>Total Budget</h3>
+                        <i class="fas fa-edit admin-only hidden" id="editBudgetIcon"
+                            style="cursor: pointer; color: var(--accent); font-size: 0.875rem;"
+                            onclick="showModal('editBudgetModal')"></i>
+                    </div>
+                    <div class="value" id="totalBudget" style="color: var(--accent);">₹0</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Total Capital</h3>
+                    <div class="value" id="totalCapital">₹0</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Current Balance</h3>
+                    <div class="value" id="currentBalance" style="color: var(--success);">₹0</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Approved Expenses</h3>
+                    <div class="value" id="approvedExpenses" style="color: var(--danger);">₹0</div>
+                </div>
+                <div class="card stat-card">
+                    <h3>Pending Expenses</h3>
+                    <div class="value" id="pendingExpenses" style="color: var(--warning);">₹0</div>
+                </div>
+                <div class="card stat-card"
+                    style="border: 1px solid var(--accent); background: rgba(59, 130, 246, 0.05);">
+                    <h3 style="color: var(--accent);">Active Plans</h3>
+                    <div class="value" id="activePlans">0</div>
+                </div>
+            </div>
+
+            <!-- Readiness Bar -->
+            <div class="card">
+                <div class="flex-between">
+                    <h3 style="font-size: 1rem;">Financial Readiness</h3>
+                    <span id="readinessPercent" font-weight="700">0%</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Calculated against Total Budget.</p>
+            </div>
+
+            <!-- Personal Split Card -->
+            <div id="personalStatusCard" class="card hidden">
+                <div class="flex-between">
+                    <h3 style="font-size: 1.125rem; color: var(--primary);">My Contribution Status</h3>
+                    <i class="fas fa-hand-holding-usd" style="color: var(--accent);"></i>
+                </div>
+
+                <div style="margin: 1.5rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">Your Share (Split)</p>
+                        <div class="value" id="personalShare" style="font-size: 1.25rem;">₹0</div>
+                    </div>
+                    <div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted);">You've Paid</p>
+                        <div class="value" id="personalPaid" style="font-size: 1.25rem; color: var(--success);">₹0</div>
+                    </div>
+                </div>
+
+                <div class="progress-container" style="height: 8px; margin-bottom: 1rem;">
+                    <div class="progress-bar" id="personalProgress" style="background: var(--accent);"></div>
+                </div>
+
+                <div id="paymentReminder" class="badge"
+                    style="width: 100%; text-align: center; padding: 0.75rem; display: block; font-size: 0.875rem;">
+                    Checking status...
+                </div>
+
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">
+                    Budget is split equally among <span id="partnerCount">0</span> registered partners.
+                </p>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Report Selection Modal -->
+    <div id="reportModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+            <h3>Monthly Financial Report</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Select month and year to
+                generate summary.</p>
+            <div class="form-group">
+                <label>Report Period</label>
+                <select id="reportPeriod" onchange="toggleReportPeriodFields()">
+                    <option value="single">Specific Month</option>
+                    <option value="last3">Last 3 Months</option>
+                    <option value="last6">Last 6 Months</option>
+                </select>
+            </div>
+            <div id="monthSelectorGroup">
+                <div class="form-group">
+                    <label>Month</label>
+                    <select id="reportMonth">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Year</label>
+                    <input type="number" id="reportYear" value="2025">
+                </div>
+            </div>
+            <div class="flex-between" style="gap: 1rem;">
+                <button type="button" class="btn btn-ghost" onclick="hideModal('reportModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="generatePDFReport()">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Budget Modal -->
+    <div id="editBudgetModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+            <h3>Update Total Budget</h3>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Set your overall financial
+                goal for the business.</p>
+            <form id="budgetForm">
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="newBudgetValue" required placeholder="50000">
+                </div>
+                <div class="flex-between" style="gap: 1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('editBudgetModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Nav (Mobile) -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item active">
+            <i class="fas fa-chart-line"></i>
+            <span>Dash</span>
+        </a>
+        <a href="expenses.html" class="bottom-nav-item">
+            <i class="fas fa-receipt"></i>
+            <span>Exp</span>
+        </a>
+        <a href="plans.html" class="bottom-nav-item">
+            <i class="fas fa-tasks"></i>
+            <span>Plans</span>
+        </a>
+        <a href="contributions.html" class="bottom-nav-item">
+            <i class="fas fa-hand-holding-usd"></i>
+            <span>Contribs</span>
+        </a>
+    </nav>
+
+    <!-- FAB -->
+    <a href="expenses.html?action=add" class="btn-fab">
+        <i class="fas fa-plus"></i>
+    </a>
+
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+    <script>
+        async function initDashboard() {
+            const user = await checkAuth();
+
+            // Fetch Data
+            const { data: contributions } = await window.db.getContributions();
+            const { data: expenses } = await window.db.getExpenses();
+            const { data: plans } = await window.db.getPlans();
+            const { data: allProfiles } = await window.db.getProfiles();
+            const manualBudget = await window.db.getSetting('target_budget');
+
+            // Toggle Edit Icon for Admin
+            const isAdmin = user && user.profile?.role === 'admin';
+            if (isAdmin) document.getElementById('editBudgetIcon')?.classList.remove('hidden');
+
+            // Calculations
+            const totalCapital = (contributions || []).reduce((sum, c) => sum + c.amount, 0);
+            const approvedExp = (expenses || []).filter(e => e.status === 'approved').reduce((sum, e) => sum + e.amount, 0);
+            const pendingExpVal = (expenses || []).filter(e => e.status === 'pending').reduce((sum, e) => sum + e.amount, 0);
+            const balance = totalCapital - approvedExp;
+
+            const activePlans = (plans || []).filter(p => p.status === 'pending');
+            const plansSum = activePlans.reduce((sum, p) => sum + p.estimated_cost, 0);
+
+            // Use manual budget if set, otherwise fallback to plans sum
+            const finalBudget = manualBudget > 0 ? manualBudget : plansSum;
+            const readiness = finalBudget > 0 ? Math.min(Math.round((balance / finalBudget) * 100), 100) : 100;
+
+            // Personal Split Logic
+            const statusCard = document.getElementById('personalStatusCard');
+            if (user && user.profile && user.profile.role === 'partner') {
+                const partners = (allProfiles || []).filter(p => p.role === 'partner');
+                const partnerCount = partners.length || 1;
+                const personalShare = finalBudget / partnerCount;
+                const userContributions = (contributions || []).filter(c => c.partner_id === user.id);
+                const totalUserPaid = userContributions.reduce((sum, c) => sum + c.amount, 0);
+                const remaining = Math.max(0, personalShare - totalUserPaid);
+                const paidPercent = Math.min(100, Math.round((totalUserPaid / personalShare) * 100)) || 0;
+
+                statusCard.classList.remove('hidden');
+
+                document.getElementById('personalShare').textContent = `₹${Math.round(personalShare).toLocaleString()}`;
+                document.getElementById('personalPaid').textContent = `₹${totalUserPaid.toLocaleString()}`;
+                document.getElementById('partnerCount').textContent = partnerCount;
+                document.getElementById('personalProgress').style.width = `${paidPercent}%`;
+
+                const reminderEl = document.getElementById('paymentReminder');
+                if (remaining > 0) {
+                    reminderEl.textContent = `Pending: ₹${Math.round(remaining).toLocaleString()} more to pay.`;
+                    reminderEl.className = 'badge badge-pending';
+                } else {
+                    reminderEl.textContent = 'Great! Your share is fully paid.';
+                    reminderEl.className = 'badge badge-approved';
+                }
+            } else {
+                statusCard?.classList.add('hidden');
+            }
+
+            // Update UI
+            document.getElementById('totalCapital').textContent = `₹${totalCapital.toLocaleString()}`;
+            document.getElementById('totalBudget').textContent = `₹${finalBudget.toLocaleString()}`;
+            document.getElementById('approvedExpenses').textContent = `₹${approvedExp.toLocaleString()}`;
+            document.getElementById('currentBalance').textContent = `₹${balance.toLocaleString()}`;
+            document.getElementById('pendingExpenses').textContent = `₹${pendingExpVal.toLocaleString()}`;
+            document.getElementById('activePlans').textContent = activePlans.length;
+
+            document.getElementById('readinessPercent').textContent = `${readiness}%`;
+            document.getElementById('progressBar').style.width = `${readiness}%`;
+
+            // Set input value in modal
+            document.getElementById('newBudgetValue').value = manualBudget;
+
+            // Set default year for report
+            document.getElementById('reportYear').value = new Date().getFullYear();
+            document.getElementById('reportMonth').value = new Date().getMonth();
+        }
+
+        function toggleReportPeriodFields() {
+            const period = document.getElementById('reportPeriod').value;
+            const group = document.getElementById('monthSelectorGroup');
+            group.style.display = period === 'single' ? 'block' : 'none';
+        }
+
+        async function generatePDFReport() {
+            const period = document.getElementById('reportPeriod').value;
+            const month = parseInt(document.getElementById('reportMonth').value);
+            const year = parseInt(document.getElementById('reportYear').value);
+
+            const now = new Date();
+            let startDate = new Date(year, month, 1);
+            let endDate = new Date(year, month + 1, 0, 23, 59, 59);
+            let titleRange = "";
+
+            if (period === 'last3') {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                titleRange = "Last 3 Months";
+            } else if (period === 'last6') {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                titleRange = "Last 6 Months";
+            } else {
+                titleRange = `${document.getElementById('reportMonth').options[month].text} ${year}`;
+            }
+
+            const { data: contribs } = await window.db.getContributions();
+            const { data: expenses } = await window.db.getExpenses();
+
+            const filteredContribs = (contribs || []).filter(c => {
+                const date = new Date(c.date);
+                return date >= startDate && date <= endDate;
+            });
+
+            const filteredExpenses = (expenses || []).filter(e => {
+                const date = new Date(e.created_at);
+                return date >= startDate && date <= endDate;
+            });
+
+            const totalIn = filteredContribs.reduce((sum, c) => sum + c.amount, 0);
+            const totalOut = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFontSize(22);
+            doc.setTextColor(15, 23, 42); // --primary color
+            doc.text('StreetFit Business Report', 14, 20);
+
+            doc.setFontSize(12);
+            doc.setTextColor(100, 116, 139); // --text-muted
+            doc.text(`Financial Summary: ${titleRange}`, 14, 30);
+            doc.text(`Period: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`, 14, 37);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 44);
+
+            // Summary Table
+            doc.autoTable({
+                startY: 52,
+                head: [['Category', 'Amount (INR)']],
+                body: [
+                    ['Total Contributions (In)', totalIn.toLocaleString()],
+                    ['Total Expenses (Out)', totalOut.toLocaleString()],
+                    ['Net Cash Flow', (totalIn - totalOut).toLocaleString()]
+                ],
+                theme: 'striped',
+                headStyles: { fillColor: [59, 130, 246] } // --accent
+            });
+
+            // Contributions Table
+            doc.setFontSize(14);
+            doc.setTextColor(15, 23, 42);
+            doc.text('Detailed Contributions', 14, doc.lastAutoTable.finalY + 15);
+
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 20,
+                head: [['Date', 'Partner', 'Amount (INR)']],
+                body: filteredContribs.map(c => [
+                    new Date(c.date).toLocaleDateString(),
+                    c.profiles?.username || 'Unknown',
+                    c.amount.toLocaleString()
+                ]),
+                theme: 'grid'
+            });
+
+            // Expenses Table
+            doc.setFontSize(14);
+            doc.text('Detailed Expenses', 14, doc.lastAutoTable.finalY + 15);
+
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 20,
+                head: [['Date', 'Description', 'By', 'Status', 'Amount (INR)']],
+                body: filteredExpenses.map(e => [
+                    new Date(e.created_at).toLocaleDateString(),
+                    e.description,
+                    e.profiles?.username || 'Guest',
+                    e.status.toUpperCase(),
+                    e.amount.toLocaleString()
+                ]),
+                theme: 'grid'
+            });
+
+            const safeTitle = titleRange.replace(/\s+/g, '_');
+            doc.save(`StreetFit_Report_${safeTitle}.pdf`);
+            hideModal('reportModal');
+        }
+
+        document.getElementById('budgetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newValue = parseFloat(document.getElementById('newBudgetValue').value);
+            const btn = e.target.querySelector('button[type="submit"]');
+
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+
+            await window.db.updateSetting('target_budget', newValue);
+
+            hideModal('editBudgetModal');
+            initDashboard();
+            btn.disabled = false;
+            btn.textContent = 'Update Budget';
+        });
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        window.addEventListener('load', initDashboard);
+    </script>
+</body>
+
+</html>

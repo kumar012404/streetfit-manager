@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth | StreetFit Business Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h1>StreetFit</h1>
+            <p>Business Management Workspace</p>
+
+            <form id="authForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" placeholder="Ex: kumar" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" id="submitBtn" class="btn btn-primary">Sign In</button>
+                <button type="button" id="toggleAuth" class="btn btn-ghost"
+                    style="margin-top: 0.5rem; font-size: 0.875rem;">
+                    Don't have an account? Sign Up
+                </button>
+            </form>
+
+            <div id="authError" class="badge badge-rejected hidden"
+                style="margin-top: 1rem; text-align: center; display: block;"></div>
+
+            <a href="index.html" class="btn btn-ghost" style="margin-top: 1rem; font-size: 0.875rem;">
+                <i class="fas fa-arrow-left" style="margin-right: 0.5rem;"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script src="supabase.js"></script>
+    <script>
+        let isLogin = true;
+        const authForm = document.getElementById('authForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const toggleBtn = document.getElementById('toggleAuth');
+        const errorDiv = document.getElementById('authError');
+
+        toggleBtn.addEventListener('click', () => {
+            isLogin = !isLogin;
+            submitBtn.textContent = isLogin ? 'Sign In' : 'Sign Up';
+            toggleBtn.textContent = isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In";
+            errorDiv.classList.add('hidden');
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            errorDiv.classList.add('hidden');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            try {
+                let result;
+                if (isLogin) {
+                    result = await window.auth.login(username, password);
+                } else {
+                    result = await window.auth.signup(username, password);
+                }
+
+                if (result && result.error) {
+                    errorDiv.textContent = result.error.message;
+                    errorDiv.classList.remove('hidden');
+                } else {
+                    // Success - always redirect to main dashboard
+                    window.location.href = 'index.html';
+                }
+            } catch (err) {
+                console.error("System Error:", err);
+                errorDiv.textContent = "An unexpected error occurred.";
+                errorDiv.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = isLogin ? 'Sign In' : 'Sign Up';
+            }
+        });
+
+        window.addEventListener('load', async () => {
+            const user = await window.auth.getCurrentUser();
+            // Only auto-redirect if already logged in as ADMIN
+            if (user && user.profile && user.profile.role === 'admin') {
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+
+</html>
