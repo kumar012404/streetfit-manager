@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenses | StreetFit</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
+    <div class="mobile-header-fix">
+        <div class="header-spacer"></div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; color: var(--primary);">StreetFit</h2>
+        <div class="profile-container">
+            <div class="profile-btn" onclick="document.getElementById('userRoleBadgeMobile').classList.toggle('show')">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div id="userRoleBadgeMobile" class="badge badge-pending">Partner</div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <nav class="sidebar" id="sidebar">
+            <div class="brand-area" style="margin-bottom: 2rem; padding: 0 1rem;">
+                <h2 style="color: white;">StreetFit</h2>
+            </div>
+            <a href="index.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="contributions.html" class="nav-link"><i class="fas fa-hand-holding-usd"></i>
+                Contributions</a>
+            <a href="expenses.html" class="nav-link active"><i class="fas fa-receipt"></i> Expenses</a>
+            <a href="plans.html" class="nav-link"><i class="fas fa-tasks"></i> Plans</a>
+            <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--border);">
+                <!-- Partner Login -->
+                <a href="auth.html" id="adminLoginBtn" class="btn btn-ghost">
+                    <i class="fas fa-users"></i> Partner Login
+                </a>
+                <a href="auth.html" id="adminPortalBtn" class="btn btn-ghost">
+                    <i class="fas fa-user-shield"></i> Admin Access
+                </a>
+                <button onclick="window.auth.logout()" class="btn btn-ghost" style="color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="flex-between" style="margin-bottom: 2rem;">
+                <h1>Expenses</h1>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button class="btn btn-primary" style="width: auto;" onclick="showModal('addExpenseModal')">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </button>
+                    <div class="profile-container hide-mobile">
+                        <div class="profile-btn"
+                            onclick="document.getElementById('userRoleBadge').classList.toggle('show')">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div id="userRoleBadge" class="badge badge-pending">Partner</div>
+                    </div>
+                </div>
+            </header>
+
+            <div id="expenseList">
+                <!-- Dynamically populated -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="addExpenseModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+            <h3>New Expense</h3>
+            <form id="expenseForm" style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="expDesc" required placeholder="Equipments, Rent, etc.">
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="expAmount" required placeholder="1500">
+                </div>
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" id="expPartnerName" required placeholder="Ex: Kumar">
+                </div>
+                <div class="flex-between" style="gap: 1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('addExpenseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit for Approval</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Expense Modal -->
+    <div id="editExpenseModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+            <h3>Edit Expense</h3>
+            <form id="editExpenseForm" style="margin-top: 1rem;">
+                <input type="hidden" id="editExpId">
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="editExpDesc" required>
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="editExpAmount" required>
+                </div>
+                <div class="flex-between" style="gap: 1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('editExpenseModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item"><i class="fas fa-chart-line"></i><span>Dash</span></a>
+        <a href="expenses.html" class="bottom-nav-item active"><i class="fas fa-receipt"></i><span>Exp</span></a>
+        <a href="plans.html" class="bottom-nav-item"><i class="fas fa-tasks"></i><span>Plans</span></a>
+        <a href="contributions.html" class="bottom-nav-item"><i
+                class="fas fa-hand-holding-usd"></i><span>Contribs</span></a>
+    </nav>
+
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+    <script>
+        let currentUser = null;
+
+        async function loadExpenses() {
+            const user = await checkAuth();
+            const { data: expenses } = await window.db.getExpenses();
+            if (!expenses) return;
+
+            const isAdmin = user && user.profile?.role === 'admin';
+            const list = document.getElementById('expenseList');
+
+            list.innerHTML = expenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(e => `
+                <div class="card">
+                    <div class="flex-between">
+                        <div>
+                            <div style="font-weight: 700; font-size: 1.1rem;">₹${e.amount.toLocaleString()}</div>
+                            <div style="color: var(--text-muted); font-size: 0.875rem;">${e.description}</div>
+                        </div>
+                        <span class="badge badge-${e.status}">${e.status.toUpperCase()}</span>
+                    </div>
+                    <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted);" class="flex-between">
+                        <span>By: ${e.profiles?.username || 'Guest'}</span>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <span>${new Date(e.created_at).toLocaleDateString()}</span>
+                            ${isAdmin ? `
+                                <i class="fas fa-edit" style="color: var(--accent); cursor: pointer; padding: 0.25rem;" onclick="openEditExpenseModal('${e.id}', '${e.description}', ${e.amount})"></i>
+                                <i class="fas fa-trash" style="color: var(--danger); cursor: pointer; padding: 0.25rem;" onclick="removeExpense('${e.id}')"></i>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ${isAdmin && e.status === 'pending' ? `
+                        <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                            <button class="btn" style="background: var(--success); color: white; min-height: 40px;" onclick="approveExpense('${e.id}')">Approve</button>
+                            <button class="btn" style="background: var(--danger); color: white; min-height: 40px;" onclick="rejectExpense('${e.id}')">Reject</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function removeExpense(id) {
+            if (!confirm('Permanently delete this expense?')) return;
+            await window.db.deleteExpense(id);
+            loadExpenses();
+        }
+
+        function openEditExpenseModal(id, desc, amt) {
+            document.getElementById('editExpId').value = id;
+            document.getElementById('editExpDesc').value = desc;
+            document.getElementById('editExpAmount').value = amt;
+            showModal('editExpenseModal');
+        }
+
+        async function approveExpense(id) {
+            await window.db.updateExpenseStatus(id, 'approved');
+            loadExpenses();
+        }
+
+        async function rejectExpense(id) {
+            await window.db.updateExpenseStatus(id, 'rejected');
+            loadExpenses();
+        }
+
+        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('expDesc').value;
+            const amount = parseFloat(document.getElementById('expAmount').value);
+            const partnerName = document.getElementById('expPartnerName').value;
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                // Find account ID for this username
+                const { data: profile } = await window.db.getProfileByUsername(partnerName);
+
+                if (!profile) {
+                    alert(`Error: Account for "${partnerName}" not found. They must Sign Up first.`);
+                    return;
+                }
+
+                const { error } = await window.db.addExpense(desc, amount, profile.id);
+                if (error) throw error;
+
+                hideModal('addExpenseModal');
+                loadExpenses();
+            } catch (err) {
+                console.error(err);
+                alert('Failed to save expense: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit for Approval';
+            }
+        });
+
+        document.getElementById('editExpenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editExpId').value;
+            const desc = document.getElementById('editExpDesc').value;
+            const amount = parseFloat(document.getElementById('editExpAmount').value);
+
+            const { error } = await window.db.updateExpense(id, desc, amount);
+            if (error) alert('Error: ' + error.message);
+            else {
+                hideModal('editExpenseModal');
+                loadExpenses();
+            }
+        });
+
+        window.addEventListener('load', () => {
+            loadExpenses();
+            // Handle FAB action if coming from dashboard
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'add') {
+                showModal('addExpenseModal');
+            }
+        });
+    </script>
+</body>
+
+</html>

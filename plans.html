@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plans | StreetFit</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
+    <div class="mobile-header-fix">
+        <div class="header-spacer"></div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; color: var(--primary);">StreetFit</h2>
+        <div class="profile-container">
+            <div class="profile-btn" onclick="document.getElementById('userRoleBadgeMobile').classList.toggle('show')">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div id="userRoleBadgeMobile" class="badge badge-pending">Partner</div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <nav class="sidebar" id="sidebar">
+            <div class="brand-area" style="margin-bottom: 2rem; padding: 0 1rem;">
+                <h2 style="color: white;">StreetFit</h2>
+            </div>
+            <a href="index.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="contributions.html" class="nav-link"><i class="fas fa-hand-holding-usd"></i>
+                Contributions</a>
+            <a href="expenses.html" class="nav-link"><i class="fas fa-receipt"></i> Expenses</a>
+            <a href="plans.html" class="nav-link active"><i class="fas fa-tasks"></i> Plans</a>
+            <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--border);">
+                <!-- Partner Login -->
+                <a href="auth.html" id="adminLoginBtn" class="btn btn-ghost">
+                    <i class="fas fa-users"></i> Partner Login
+                </a>
+                <a href="auth.html" id="adminPortalBtn" class="btn btn-ghost">
+                    <i class="fas fa-user-shield"></i> Admin Access
+                </a>
+                <button onclick="window.auth.logout()" class="btn btn-ghost" style="color: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="flex-between" style="margin-bottom: 2.5rem;">
+                <div>
+                    <h1 style="margin: 0; line-height: 1.1;">Business Goals</h1>
+                    <p style="color: var(--text-muted); font-weight: 500; font-size: 0.95rem; margin-top: 0.25rem;">
+                        Track and complete your brand tasks</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="btn btn-primary" style="width: auto; padding-inline: 1.5rem;"
+                        onclick="showModal('addPlanModal')">
+                        <i class="fas fa-plus"></i> New Task
+                    </button>
+                    <div class="profile-container hide-mobile">
+                        <div class="profile-btn"
+                            onclick="document.getElementById('userRoleBadge').classList.toggle('show')">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div id="userRoleBadge" class="badge badge-pending">Partner</div>
+                    </div>
+                </div>
+            </header>
+
+            <div id="planList" class="todo-list">
+                <!-- Tasks will be rendered here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Plan Modal -->
+    <div id="addPlanModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0; overflow: visible;">
+            <h3>Create New Task</h3>
+            <form id="planForm" style="margin-top: 1rem;">
+                <div class="form-group">
+                    <label>Task Title</label>
+                    <input type="text" id="planTitle" required placeholder="Sourcing fabric, Logo design...">
+                </div>
+                <div class="form-group">
+                    <label>Assign Partner</label>
+                    <div class="custom-select-container" id="customAddPartner">
+                        <div class="custom-select-trigger" onclick="toggleCustomDropdown('customAddPartner')">
+                            <span id="triggerValue_customAddPartner"><i class="fas fa-user-clock"
+                                    style="margin-right: 8px; color: #94a3b8;"></i>Unassigned</span>
+                            <i class="fas fa-chevron-down" style="font-size: 0.8rem; color: var(--accent);"></i>
+                        </div>
+                        <div class="custom-options" id="options_customAddPartner">
+                            <!-- Populated by JS -->
+                        </div>
+                        <select id="planPartner" class="hidden">
+                            <option value="Unassigned">Unassigned</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-between" style="gap: 0.75rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('addPlanModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="padding-inline: 1.25rem;">Create Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Plan Modal -->
+    <div id="editPlanModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0; overflow: visible;">
+            <h3>Edit Task</h3>
+            <form id="editPlanForm" style="margin-top: 1rem;">
+                <input type="hidden" id="editPlanId">
+                <div class="form-group">
+                    <label>Task Title</label>
+                    <input type="text" id="editPlanTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Assign Partner</label>
+                    <div class="custom-select-container" id="customEditPartner">
+                        <div class="custom-select-trigger" onclick="toggleCustomDropdown('customEditPartner')">
+                            <span id="triggerValue_customEditPartner"><i class="fas fa-user-clock"
+                                    style="margin-right: 8px; color: #94a3b8;"></i>Unassigned</span>
+                            <i class="fas fa-chevron-down" style="font-size: 0.8rem; color: var(--accent);"></i>
+                        </div>
+                        <div class="custom-options" id="options_customEditPartner">
+                            <!-- Populated by JS -->
+                        </div>
+                        <select id="editPlanPartner" class="hidden">
+                            <option value="Unassigned">Unassigned</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-between" style="gap: 1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('editPlanModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Complete Plan Modal -->
+    <div id="completePlanModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+            <h3>Mark Task as Completed</h3>
+            <form id="completeForm" style="margin-top: 1rem;">
+                <input type="hidden" id="completePlanId">
+                <div class="form-group">
+                    <label>Actual Cost (INR)</label>
+                    <input type="number" id="actualCost" required placeholder="4800">
+                </div>
+                <div class="flex-between" style="gap: 1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('completePlanModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Finish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item"><i class="fas fa-chart-line"></i><span>Dash</span></a>
+        <a href="expenses.html" class="bottom-nav-item"><i class="fas fa-receipt"></i><span>Exp</span></a>
+        <a href="plans.html" class="bottom-nav-item active"><i class="fas fa-tasks"></i><span>Plans</span></a>
+        <a href="contributions.html" class="bottom-nav-item"><i
+                class="fas fa-hand-holding-usd"></i><span>Contribs</span></a>
+    </nav>
+
+    <script src="supabase.js"></script>
+    <script src="app.js"></script>
+    <script>
+        let currentUser = null;
+
+        function toggleCustomDropdown(containerId) {
+            const container = document.getElementById(containerId);
+            const isOpen = container.classList.contains('open');
+
+            // Close all other dropdowns first
+            document.querySelectorAll('.custom-select-container').forEach(c => c.classList.remove('open'));
+
+            if (!isOpen) {
+                container.classList.add('open');
+            }
+        }
+
+        function selectCustomOption(containerId, selectId, value, label) {
+            const container = document.getElementById(containerId);
+            const nativeSelect = document.getElementById(selectId);
+            const triggerSpan = document.getElementById(`triggerValue_${containerId}`);
+
+            // Update native select
+            nativeSelect.value = value;
+
+            // Update trigger UI
+            let icon = '<i class="fas fa-user" style="margin-right: 8px; color: #6366f1;"></i>';
+            if (value === 'Unassigned') icon = '<i class="fas fa-user-clock" style="margin-right: 8px; color: #94a3b8;"></i>';
+            if (value === 'All Partners') icon = '<i class="fas fa-users" style="margin-right: 8px; color: var(--accent);"></i>';
+
+            triggerSpan.innerHTML = icon + label;
+
+            // Close dropdown
+            container.classList.remove('open');
+
+            // Visual feedback
+            const options = container.querySelectorAll('.custom-option');
+            options.forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.textContent.trim() === label) opt.classList.add('selected');
+            });
+        }
+
+        // Close dropdowns on click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select-container')) {
+                document.querySelectorAll('.custom-select-container').forEach(c => c.classList.remove('open'));
+            }
+        });
+
+        async function loadPlans() {
+            const user = await checkAuth();
+            currentUser = user;
+            const isAdmin = user && user.profile && user.profile.role === 'admin';
+
+            const { data: plans, error } = await window.db.getPlans();
+            const { data: profiles } = await window.db.getProfiles();
+
+            if (error) {
+                console.error("Error loading plans:", error);
+                return;
+            }
+
+            // Populate Partner Selects (Custom Version)
+            if (profiles) {
+                const partners = profiles.filter(p => p.role === 'partner');
+
+                const generateOptions = (containerId, selectId) => {
+                    const optionsContainer = document.getElementById(`options_${containerId}`);
+                    let html = `
+                        <div class="custom-option" onclick="selectCustomOption('${containerId}', '${selectId}', 'Unassigned', 'Unassigned')">
+                            <i class="fas fa-user-clock" style="color: #94a3b8;"></i> Unassigned
+                        </div>
+                        <div class="custom-option" onclick="selectCustomOption('${containerId}', '${selectId}', 'All Partners', 'All Partners')">
+                            <i class="fas fa-users" style="color: var(--accent);"></i> All Partners
+                        </div>
+                    `;
+
+                    html += partners.map(p => {
+                        const capitalized = p.username.charAt(0).toUpperCase() + p.username.slice(1);
+                        return `
+                            <div class="custom-option" onclick="selectCustomOption('${containerId}', '${selectId}', '${p.username}', '${capitalized}')">
+                                <i class="fas fa-user" style="color: #6366f1;"></i> ${capitalized}
+                            </div>
+                        `;
+                    }).join('');
+
+                    optionsContainer.innerHTML = html;
+
+                    // Also sync native selects for form submissions
+                    const nativeSelect = document.getElementById(selectId);
+                    nativeSelect.innerHTML = `<option value="Unassigned">Unassigned</option><option value="All Partners">All Partners</option>` +
+                        partners.map(p => `<option value="${p.username}">${p.username}</option>`).join('');
+                };
+
+                generateOptions('customAddPartner', 'planPartner');
+                generateOptions('customEditPartner', 'editPlanPartner');
+            }
+
+            const list = document.getElementById('planList');
+
+            if (!plans || plans.length === 0) {
+                list.innerHTML = `
+                    <div class="card" style="text-align: center; padding: 4rem 1.5rem; border: 2px dashed #e2e8f0; background: #fff;">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <h2 style="font-weight: 800; color: var(--primary); margin-bottom: 0.5rem;">Tasks Empty</h2>
+                        <p style="color: var(--text-muted); margin-bottom: 2.5rem; max-width: 300px; margin-inline: auto;">Start adding your goals and tasks for the clothing brand.</p>
+                        <button class="btn btn-primary" style="width: auto; margin: 0 auto; padding-inline: 2.5rem;" onclick="showModal('addPlanModal')">
+                            Add First Task
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort so pending items are on top
+            const sortedPlans = plans.sort((a, b) => {
+                if (a.status === 'pending' && b.status === 'completed') return -1;
+                if (a.status === 'completed' && b.status === 'pending') return 1;
+                return new Date(b.created_at) - new Date(a.created_at);
+            });
+
+            list.innerHTML = sortedPlans.map(p => `
+                <div class="card roadmap-card ${p.status === 'completed' ? 'completed' : ''}" style="margin-bottom: 1rem; padding: 1.25rem;">
+                    <div style="display: flex; gap: 1.25rem; align-items: flex-start;">
+                        <div style="padding-top: 0.2rem;">
+                            ${p.status === 'completed' ?
+                    `<div style="width: 26px; height: 26px; border-radius: 50%; background: var(--success); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer;" onclick="checkAdminAndUpdateStatus('${p.id}', 'pending', '${p.phase}')">
+                                    <i class="fas fa-check"></i>
+                                </div>` :
+                    `<div style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #cbd5e1; cursor: pointer; transition: all 0.2s;" 
+                                      onmouseover="this.style.borderColor='var(--accent)'" 
+                                      onmouseout="this.style.borderColor='#cbd5e1'"
+                                      onclick="checkAdminAndOpenComplete('${p.id}', '${p.phase}')">
+                                </div>`
+                }
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="flex-between" style="align-items: flex-start;">
+                                <div style="flex: 1;">
+                                    <h3 style="font-size: 1.05rem; font-weight: 700; color: ${p.status === 'completed' ? 'var(--text-muted)' : 'var(--primary)'}; text-decoration: ${p.status === 'completed' ? 'line-through' : 'none'};">
+                                        ${p.title}
+                                    </h3>
+                                    <div style="display: flex; gap: 1rem; margin-top: 0.4rem; flex-wrap: wrap; align-items: center;">
+                                        <span class="task-partner-name" style="font-size: 0.7rem; font-weight: 700; color: var(--accent); background: rgba(59, 130, 246, 0.08); padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;">
+                                            <i class="fas fa-user" style="font-size: 0.6rem;"></i> ${p.phase || 'Unassigned'}
+                                        </span>
+                                        ${p.actual_cost ? `
+                                            <span style="font-size: 0.7rem; font-weight: 700; color: #15803d; background: #f0fdf4; padding: 2px 6px; border-radius: 4px;">
+                                                ACTUAL COST: ₹${p.actual_cost.toLocaleString()}
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 0.4rem; margin-left: 0.5rem;">
+                                    ${isAdmin ? `
+                                        <button class="btn btn-ghost" style="width: 36px; height: 36px; min-height: auto; padding: 0; background: transparent; border: 1px solid #f1f5f9;" onclick="openEditPlanModal('${p.id}', '${p.title}', '${p.phase}')">
+                                            <i class="fas fa-edit" style="font-size: 0.8rem; color: var(--text-muted);"></i>
+                                        </button>
+                                        <button class="btn btn-ghost" style="width: 36px; height: 36px; min-height: auto; padding: 0; background: #fff1f2; border: 1px solid #ffe4e6; color: var(--danger);" onclick="removePlan('${p.id}')">
+                                            <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function checkAdminAndUpdateStatus(id, status, assignedPartner) {
+            const user = currentUser;
+            const isAdmin = user && user.profile && user.profile.role === 'admin';
+            const isAssigned = (assignedPartner === 'All Partners') || (user && user.profile && user.profile.username === assignedPartner);
+
+            if (isAdmin || isAssigned) {
+                updateStatus(id, status);
+            } else {
+                alert('Only Admin or the Assigned Partner can update this task');
+            }
+        }
+
+        function checkAdminAndOpenComplete(id, assignedPartner) {
+            const user = currentUser;
+            const isAdmin = user && user.profile && user.profile.role === 'admin';
+            const isAssigned = (assignedPartner === 'All Partners') || (user && user.profile && user.profile.username === assignedPartner);
+
+            if (isAdmin || isAssigned) {
+                openCompleteModal(id);
+            } else {
+                alert('Only Admin or the Assigned Partner can mark this as done');
+            }
+        }
+
+        async function updateStatus(id, status) {
+            const { error } = await window.db.updatePlan(id, null, null, status);
+            if (error) alert("Failed to update status: " + error.message);
+            loadPlans();
+        }
+
+        async function removePlan(id) {
+            if (!confirm('Permanently delete this task?')) return;
+            const { error } = await window.db.deletePlan(id);
+            if (error) alert("Failed to delete task: " + error.message);
+            loadPlans();
+        }
+
+        function openEditPlanModal(id, title, partner) {
+            document.getElementById('editPlanId').value = id;
+            document.getElementById('editPlanTitle').value = title;
+            const partnerVal = partner || 'Unassigned';
+            const capitalized = partnerVal.charAt(0).toUpperCase() + partnerVal.slice(1);
+            selectCustomOption('customEditPartner', 'editPlanPartner', partnerVal, capitalized);
+            showModal('editPlanModal');
+        }
+
+        function openCompleteModal(id) {
+            document.getElementById('completePlanId').value = id;
+            document.getElementById('actualCost').value = '';
+            showModal('completePlanModal');
+        }
+
+        document.getElementById('planForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+
+            const title = document.getElementById('planTitle').value;
+            const partner = document.getElementById('planPartner').value;
+            const { error } = await window.db.addPlan(title, 0, partner);
+
+            if (error) {
+                alert("Error adding task: " + error.message);
+            } else {
+                e.target.reset();
+                // Reset custom dropdown trigger
+                selectCustomOption('customAddPartner', 'planPartner', 'Unassigned', 'Unassigned');
+                hideModal('addPlanModal');
+                loadPlans();
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Create Task';
+        });
+
+        document.getElementById('editPlanForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editPlanId').value;
+            const title = document.getElementById('editPlanTitle').value;
+            const partner = document.getElementById('editPlanPartner').value;
+            const { error } = await window.db.updatePlan(id, title, 0, null, partner);
+            if (error) alert("Error updating task: " + error.message);
+            else {
+                hideModal('editPlanModal');
+                loadPlans();
+            }
+        });
+
+        document.getElementById('completeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('completePlanId').value;
+            const actual = document.getElementById('actualCost').value;
+            const { error } = await window.db.completePlan(id, actual);
+            if (error) alert("Error completing task: " + error.message);
+            else {
+                hideModal('completePlanModal');
+                loadPlans();
+            }
+        });
+
+        window.addEventListener('load', loadPlans);
+    </script>
+</body>
+
+</html>
