@@ -1,0 +1,343 @@
+/**
+ * Firebase Configuration for StreetFit Business Manager
+ * Drop-in replacement for supabase.js — same window.auth & window.db interface
+ */
+
+// ========== FIREBASE CONFIG ==========
+// REPLACE THESE WITH YOUR FIREBASE PROJECT CONFIG
+const firebaseConfig = {
+    apiKey: "AIzaSyDndv7Lp68Xhb-KU2tIo28YFwcI03AX8Y8",
+    authDomain: "streetfit-4c0b2.firebaseapp.com",
+    projectId: "streetfit-4c0b2",
+    storageBucket: "streetfit-4c0b2.firebasestorage.app",
+    messagingSenderId: "878167942999",
+    appId: "1:878167942999:web:623831d518335cfbcd0012"
+};
+
+// Initialize Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const firebaseAuth = firebase.auth();
+const firebaseDB = firebase.firestore();
+
+// Enable Offline Persistence
+firebaseDB.enablePersistence()
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn('Persistence failed: Multiple tabs open');
+        } else if (err.code == 'unimplemented') {
+            console.warn('Persistence failed: Browser not supported');
+        }
+    });
+
+// ========== AUTHENTICATION ==========
+
+async function login(username, password) {
+    const email = username.includes('@') ? username : `${username.toLowerCase()}@streetfit.local`;
+    try {
+        const result = await firebaseAuth.signInWithEmailAndPassword(email, password);
+        return { data: result, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function signup(username, password) {
+    const email = username.includes('@') ? username : `${username.toLowerCase()}@streetfit.local`;
+    try {
+        const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+        const user = result.user;
+
+        // Check if this is the first user (make them admin)
+        const profilesSnap = await firebaseDB.collection('profiles').limit(1).get();
+        const isFirstUser = profilesSnap.empty;
+
+        // Create profile document
+        const profileData = {
+            id: user.uid,
+            email: email,
+            username: username.toLowerCase(),
+            role: isFirstUser ? 'admin' : 'partner',
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await firebaseDB.collection('profiles').doc(user.uid).set(profileData);
+
+        return { data: { user, profile: profileData }, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function logout() {
+    try {
+        await firebaseAuth.signOut();
+        window.location.href = 'auth.html';
+    } catch (err) {
+        console.error('Logout error:', err);
+    }
+}
+
+async function getCurrentUser() {
+    return new Promise((resolve) => {
+        const unsubscribe = firebaseAuth.onAuthStateChanged(async (user) => {
+            unsubscribe();
+            if (user) {
+                try {
+                    const doc = await firebaseDB.collection('profiles').doc(user.uid).get();
+                    if (doc.exists) {
+                        resolve({ ...user, id: user.uid, profile: doc.data() });
+                    } else {
+                        resolve({
+                            ...user,
+                            id: user.uid,
+                            profile: { id: user.uid, username: user.email.split('@')[0], role: 'partner' }
+                        });
+                    }
+                } catch (err) {
+                    resolve(null);
+                }
+            } else {
+                resolve(null);
+            }
+        });
+    });
+}
+
+// ========== DATABASE OPERATIONS ==========
+
+function docToObj(doc) {
+    const data = doc.data();
+    // Convert Timestamps to ISO strings for compatibility
+    if (data.created_at && data.created_at.toDate) {
+        data.created_at = data.created_at.toDate().toISOString();
+    }
+    if (data.date && data.date.toDate) {
+        data.date = data.date.toDate().toISOString();
+    }
+    return { id: doc.id, ...data };
+}
+
+async function getContributions() {
+    try {
+        const snap = await firebaseDB.collection('contributions').orderBy('created_at', 'desc').get();
+        const contributions = [];
+        for (const doc of snap.docs) {
+            const data = docToObj(doc);
+            if (data.partner_id) {
+                const profileDoc = await firebaseDB.collection('profiles').doc(data.partner_id).get();
+                data.profiles = profileDoc.exists ? profileDoc.data() : null;
+            }
+            contributions.push(data);
+        }
+        return { data: contributions, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function addContribution(partner_id, amount) {
+    try {
+        await firebaseDB.collection('contributions').add({
+            partner_id,
+            amount: Number(amount),
+            date: new Date().toISOString(),
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return { data: true, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function deleteContribution(id) {
+    try {
+        await firebaseDB.collection('contributions').doc(id).delete();
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function updateContribution(id, amount) {
+    try {
+        await firebaseDB.collection('contributions').doc(id).update({ amount: Number(amount) });
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function getExpenses() {
+    try {
+        const snap = await firebaseDB.collection('expenses').orderBy('created_at', 'desc').get();
+        const expenses = [];
+        for (const doc of snap.docs) {
+            const data = docToObj(doc);
+            if (data.partner_id) {
+                const profileDoc = await firebaseDB.collection('profiles').doc(data.partner_id).get();
+                data.profiles = profileDoc.exists ? profileDoc.data() : null;
+            }
+            expenses.push(data);
+        }
+        return { data: expenses, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function addExpense(description, amount, partner_id) {
+    try {
+        await firebaseDB.collection('expenses').add({
+            description,
+            amount: Number(amount),
+            partner_id,
+            status: 'pending',
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return { data: true, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function updateExpenseStatus(id, status) {
+    try {
+        await firebaseDB.collection('expenses').doc(id).update({ status });
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function updateExpense(id, description, amount) {
+    try {
+        await firebaseDB.collection('expenses').doc(id).update({
+            description,
+            amount: Number(amount)
+        });
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function deleteExpense(id) {
+    try {
+        await firebaseDB.collection('expenses').doc(id).delete();
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function getPlans() {
+    try {
+        const snap = await firebaseDB.collection('plans').orderBy('created_at', 'desc').get();
+        return { data: snap.docs.map(docToObj), error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function addPlan(title, estimated_cost, partner = 'Unassigned') {
+    try {
+        await firebaseDB.collection('plans').add({
+            title,
+            estimated_cost: Number(estimated_cost),
+            actual_cost: null,
+            status: 'pending',
+            phase: partner,
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return { data: true, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function updatePlan(id, title, estimated_cost, status, partner) {
+    try {
+        const updateData = {};
+        if (title !== null) updateData.title = title;
+        if (estimated_cost !== null) updateData.estimated_cost = Number(estimated_cost);
+        if (status !== null) updateData.status = status;
+        if (partner !== null) updateData.phase = partner;
+
+        await firebaseDB.collection('plans').doc(id).update(updateData);
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function completePlan(id, actual_cost) {
+    try {
+        await firebaseDB.collection('plans').doc(id).update({
+            actual_cost: Number(actual_cost),
+            status: 'completed'
+        });
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function deletePlan(id) {
+    try {
+        await firebaseDB.collection('plans').doc(id).delete();
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function getProfileByUsername(username) {
+    try {
+        const snap = await firebaseDB.collection('profiles').where('username', '==', username.toLowerCase()).limit(1).get();
+        if (snap.empty) return { data: null, error: null };
+        return { data: docToObj(snap.docs[0]), error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function getProfiles() {
+    try {
+        const snap = await firebaseDB.collection('profiles').orderBy('username').get();
+        return { data: snap.docs.map(docToObj), error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function getSetting(key) {
+    try {
+        const doc = await firebaseDB.collection('settings').doc(key).get();
+        return doc.exists ? doc.data().value : 0;
+    } catch {
+        return 0;
+    }
+}
+
+async function updateSetting(key, value) {
+    try {
+        await firebaseDB.collection('settings').doc(key).set({
+            value: Number(value),
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+// ========== GLOBAL EXPORTS ==========
+window.auth = { login, signup, logout, getCurrentUser };
+window.db = {
+    getContributions, addContribution, deleteContribution, updateContribution,
+    getExpenses, addExpense, updateExpenseStatus, deleteExpense, updateExpense,
+    getPlans, addPlan, completePlan, deletePlan, updatePlan,
+    getProfileByUsername, getProfiles,
+    getSetting, updateSetting
+};
