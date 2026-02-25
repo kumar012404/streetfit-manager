@@ -9,7 +9,7 @@
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='black'/%3E%3Cdefs%3E%3ClinearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23FFD700;stop-opacity:1' /%3E%3Cstop offset='50%25' style='stop-color:%23D4AF37;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23B8860B;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50%25' y='72%25' text-anchor='middle' font-family='Outfit, Arial Black, sans-serif' font-weight='900' font-size='60' font-style='italic' fill='url(%23gold)' style='filter:drop-shadow(2px 2px 2px rgba(0,0,0,0.5))'%3ESF%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 
 <body>
@@ -62,7 +62,7 @@
 
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
 
             errorDiv.classList.add('hidden');
@@ -71,22 +71,33 @@
 
             try {
                 let result;
-                if (isLogin) {
-                    result = await window.auth.login(username, password);
-                } else {
-                    result = await window.auth.signup(username, password);
-                }
+
+                // 15 second timeout — stops infinite "Processing..."
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+                );
+
+                const authCall = isLogin
+                    ? window.auth.login(username, password)
+                    : window.auth.signup(username, password);
+
+                result = await Promise.race([authCall, timeoutPromise]);
 
                 if (result && result.error) {
-                    errorDiv.textContent = result.error.message;
+                    errorDiv.textContent = '❌ ' + result.error.message;
                     errorDiv.classList.remove('hidden');
                 } else {
-                    // Success - always redirect to main dashboard
                     window.location.href = 'index.html';
                 }
             } catch (err) {
-                console.error("System Error:", err);
-                errorDiv.textContent = "An unexpected error occurred.";
+                console.error("Auth Error:", err);
+                if (err.message === 'TIMEOUT') {
+                    errorDiv.textContent = '⏱ Request timed out. Check your internet and try again.';
+                } else if (err.message && (err.message.includes('fetch') || err.message.includes('network'))) {
+                    errorDiv.textContent = '🌐 Network error — Cannot reach server. Try switching to WiFi.';
+                } else {
+                    errorDiv.textContent = '❌ ' + (err.message || 'Unknown error.');
+                }
                 errorDiv.classList.remove('hidden');
             } finally {
                 submitBtn.disabled = false;
