@@ -5,15 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auth | StreetFit Business Manager</title>
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='black'/%3E%3Cdefs%3E%3ClinearGradient id='gold' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%23FFD700;stop-opacity:1' /%3E%3Cstop offset='50%25' style='stop-color:%23D4AF37;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%23B8860B;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='50%25' y='72%25' text-anchor='middle' font-family='Outfit, Arial Black, sans-serif' font-weight='900' font-size='60' font-style='italic' fill='url(%23gold)' style='filter:drop-shadow(2px 2px 2px rgba(0,0,0,0.5))'%3ESF%3C/text%3E%3C/svg%3E">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 </head>
 
 <body>
     <div class="auth-container">
         <div class="auth-card">
-            <h1>StreetFit</h1>
+            <h1 class="text-gold"
+                style="font-style: italic; font-weight: 900; font-size: 2.5rem; letter-spacing: -1.5px; width: 100%; text-align: center; margin-bottom: 0.25rem;">
+                StreetFit</h1>
             <p>Business Management Workspace</p>
 
             <form id="authForm">
