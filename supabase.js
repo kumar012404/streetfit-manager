@@ -37,12 +37,30 @@ async function logout() {
 }
 
 async function getCurrentUser() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return null;
+    // getSession() reads from localStorage — works OFFLINE without WiFi
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session || !session.user) return null;
 
-    // Get profile for role
-    const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-    return { ...user, profile };
+    const user = session.user;
+
+    // Try to fetch profile (needs network). If offline, use cached data from session metadata.
+    try {
+        const { data: profile } = await supabaseClient
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+        return { ...user, profile };
+    } catch (err) {
+        // Offline fallback: use user_metadata stored during signup
+        console.warn('Network unavailable, using cached session data.');
+        const fallbackProfile = {
+            id: user.id,
+            username: user.user_metadata?.username || user.email?.split('@')[0] || 'User',
+            role: user.user_metadata?.role || 'partner'
+        };
+        return { ...user, profile: fallbackProfile };
+    }
 }
 
 /**
