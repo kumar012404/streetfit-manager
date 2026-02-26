@@ -41,9 +41,15 @@ async function login(username, password) {
     const email = username.includes('@') ? username : `${username.toLowerCase()}@streetfit.local`;
     try {
         const result = await firebaseAuth.signInWithEmailAndPassword(email, password);
-        // Clear caches on login
+        // CRITICAL: Clear all caches so the new user's data loads fresh
         _cachedUser = null;
         _cachedProfilesMap = null;
+        sessionStorage.removeItem('sf_user_cache');
+        localStorage.removeItem('sf_dash_cache');
+        localStorage.removeItem('sf_contribs_cache');
+        localStorage.removeItem('sf_expenses_cache');
+        localStorage.removeItem('sf_plans_cache');
+
         return { data: result, error: null };
     } catch (err) {
         return { data: null, error: { message: err.message } };
@@ -79,10 +85,14 @@ async function signup(username, password) {
 async function logout() {
     try {
         await firebaseAuth.signOut();
-        // Clear caches
+        // Clear all caches
         _cachedUser = null;
         _cachedProfilesMap = null;
         sessionStorage.removeItem('sf_user_cache');
+        localStorage.removeItem('sf_dash_cache');
+        localStorage.removeItem('sf_contribs_cache');
+        localStorage.removeItem('sf_expenses_cache');
+        localStorage.removeItem('sf_plans_cache');
         window.location.href = 'auth.html';
     } catch (err) {
         console.error('Logout error:', err);
