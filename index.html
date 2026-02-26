@@ -275,6 +275,27 @@
 
             document.getElementById('readinessPercent').textContent = `${data.readiness}%`;
             document.getElementById('progressBar').style.width = `${data.readiness}%`;
+
+            // Personal Status Card Update
+            const statusCard = document.getElementById('personalStatusCard');
+            if (data.showPersonal) {
+                statusCard.classList.remove('hidden');
+                document.getElementById('personalShare').textContent = `₹${Math.round(data.personalShare).toLocaleString()}`;
+                document.getElementById('personalPaid').textContent = `₹${data.totalUserPaid.toLocaleString()}`;
+                document.getElementById('partnerCount').textContent = data.partnerCount;
+                document.getElementById('personalProgress').style.width = `${data.paidPercent}%`;
+
+                const reminderEl = document.getElementById('paymentReminder');
+                if (data.remaining > 0) {
+                    reminderEl.textContent = `Pending: ₹${Math.round(data.remaining).toLocaleString()} more to pay.`;
+                    reminderEl.className = 'badge badge-pending';
+                } else {
+                    reminderEl.textContent = 'Great! Your share is fully paid.';
+                    reminderEl.className = 'badge badge-approved';
+                }
+            } else {
+                statusCard?.classList.add('hidden');
+            }
         }
 
         async function initDashboard() {
@@ -347,7 +368,13 @@
             // Package data for cache & UI update
             const dashData = {
                 totalCapital, approvedExp, pendingExpVal, balance,
-                activePlansCount: activePlans.length, finalBudget, readiness
+                activePlansCount: activePlans.length, finalBudget, readiness,
+                showPersonal: user && user.profile && user.profile.role === 'partner',
+                personalShare: (user && user.profile && user.profile.role === 'partner') ? personalShare : 0,
+                totalUserPaid: (user && user.profile && user.profile.role === 'partner') ? totalUserPaid : 0,
+                partnerCount: (user && user.profile && user.profile.role === 'partner') ? partnerCount : 0,
+                paidPercent: (user && user.profile && user.profile.role === 'partner') ? paidPercent : 0,
+                remaining: (user && user.profile && user.profile.role === 'partner') ? remaining : 0
             };
 
             updateDashUI(dashData);
