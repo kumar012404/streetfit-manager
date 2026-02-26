@@ -149,7 +149,8 @@
             if (!profiles || !contribs) return;
 
             const partnerList = document.getElementById('partnerList');
-            partnerList.innerHTML = profiles.filter(p => p.role === 'partner').map(p => {
+            partnerList.innerHTML = profiles.map(p => {
+                const isUserAdmin = p.role === 'admin';
                 const total = contribs
                     .filter(c => c.profiles?.username === p.username)
                     .reduce((sum, c) => sum + c.amount, 0);
@@ -158,8 +159,8 @@
                 return `
                     <div class="flex-between" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
                         <div>
-                            <span style="font-weight: 500;">${capitalized}</span>
-                            ${isAdmin ? `
+                            <span style="font-weight: 500;">${capitalized} ${isUserAdmin ? '<small style="color: var(--accent);">(Admin)</small>' : ''}</span>
+                            ${isAdmin && !isUserAdmin ? `
                                 <button class="btn btn-ghost" style="width: auto; min-height: auto; padding: 2px 8px; font-size: 0.65rem; margin-left: 0.5rem; color: var(--accent); border: 1px solid var(--accent);" 
                                     onclick="promotePartner('${p.id}', '${capitalized}')">
                                     <i class="fas fa-user-shield"></i> Make Admin
