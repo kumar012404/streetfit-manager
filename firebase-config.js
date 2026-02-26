@@ -65,8 +65,8 @@ async function signup(username, password, role = null) {
         const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
         const user = result.user;
 
-        // All new users start as Partner
-        const role = 'partner';
+        // All new users start as Guest (Must be added to team by Admin)
+        const role = 'guest';
 
         const profileData = {
             id: user.uid,
@@ -154,7 +154,7 @@ async function getCurrentUser() {
                     } else {
                         // FIX: Detect if this is the first user if profile is missing
                         const profilesSnap = await firebaseDB.collection('profiles').limit(1).get();
-                        const role = profilesSnap.empty ? 'admin' : 'partner';
+                        const role = profilesSnap.empty ? 'admin' : 'guest';
                         const username = user.email.split('@')[0];
 
                         profileData = { id: user.uid, username: username, role: role };
@@ -178,6 +178,33 @@ async function getCurrentUser() {
             }
         });
     });
+}
+
+/**
+ * Change role to "pending" to signal a join request
+ */
+async function joinTeam(uid) {
+    try {
+        await firebaseDB.collection('profiles').doc(uid).update({ role: 'pending' });
+        // Clear caches
+        _cachedUser = null;
+        sessionStorage.removeItem('sf_user_cache');
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+/**
+ * Approve a pending request or specific guest to join the team
+ */
+async function approveMember(uid) {
+    try {
+        await firebaseDB.collection('profiles').doc(uid).update({ role: 'partner' });
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
 }
 
 // ========== DATABASE OPERATIONS ==========
@@ -477,7 +504,7 @@ async function updateSetting(key, value) {
 }
 
 // ========== GLOBAL EXPORTS ==========
-window.auth = { login, signup, logout, getCurrentUser, createMember, createTeam, claimAdminRole, updateUserRole };
+window.auth = { login, signup, logout, getCurrentUser, createMember, createTeam, claimAdminRole, updateUserRole, joinTeam, approveMember };
 window.db = {
     getContributions, addContribution, deleteContribution, updateContribution,
     getExpenses, addExpense, updateExpenseStatus, deleteExpense, updateExpense,

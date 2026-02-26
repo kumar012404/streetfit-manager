@@ -64,10 +64,19 @@ function syncAdminUI() {
             badge.textContent = 'Admin';
             badge.className = 'badge badge-approved';
         } else if (user) {
-            badge.textContent = user.profile?.username || 'Partner';
-            badge.className = 'badge badge-pending';
+            const role = user.profile?.role;
+            if (role === 'pending') {
+                badge.textContent = 'Pending Approval';
+                badge.className = 'badge badge-pending';
+            } else if (role === 'guest') {
+                badge.textContent = 'Guest';
+                badge.className = 'badge badge-pending';
+            } else {
+                badge.textContent = user.profile?.username || 'Partner';
+                badge.className = 'badge badge-approved';
+            }
         } else {
-            badge.textContent = 'Partner (Guest)';
+            badge.textContent = 'Guest';
             badge.className = 'badge badge-pending';
         }
     };

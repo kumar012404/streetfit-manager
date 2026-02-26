@@ -68,17 +68,28 @@
                 </div>
             </header>
 
-            <div class="card">
-                <h3>Team Members</h3>
+            </header>
+
+            <div id="pendingContainer" class="card admin-only hidden"
+                style="background: rgba(59, 130, 246, 0.05); border: 1px dashed var(--accent); display: none;">
+                <h3 style="color: var(--accent);"><i class="fas fa-clock"></i> Pending Join Requests</h3>
                 <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
-                    Promote partners to Admin to let them approve expenses and manage finances.
+                    Users who signed up independently. Approve them to grant access to team data.
                 </p>
-                <div id="teamList" style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading team members...
-                    </div>
+                <div id="pendingList" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Pending members here -->
                 </div>
             </div>
-        </main>
+            <h3>Team Members</h3>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.5rem;">
+                Promote partners to Admin to let them approve expenses and manage finances.
+            </p>
+            <div id="teamList" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading team members...
+                </div>
+            </div>
+    </div>
+    </main>
     </div>
 
     <!-- Add Member Modal -->
@@ -137,11 +148,38 @@
             if (!user) return;
             const isAdmin = user.profile?.role === 'admin';
 
-            const { data: profiles } = await window.db.getProfiles();
-            if (!profiles) return;
+            const { data: allProfiles } = await window.db.getProfiles();
+            if (!allProfiles) return;
 
+            const isAdminPage = isAdmin;
             const teamList = document.getElementById('teamList');
-            teamList.innerHTML = profiles.sort((a, b) => (a.username || '').localeCompare(b.username)).map(p => {
+            const pendingList = document.getElementById('pendingList');
+            const pendingContainer = document.getElementById('pendingContainer');
+
+            // 1. Handle Pending Users (Admin Only)
+            const pendingUsers = allProfiles.filter(p => p.role === 'pending');
+            if (isAdmin && pendingUsers.length > 0) {
+                pendingContainer.style.display = 'block';
+                pendingList.innerHTML = pendingUsers.map(p => `
+                    <div class="card" style="margin-bottom: 0; padding: 1rem; border: 1px solid var(--accent);">
+                         <div class="flex-between">
+                            <div>
+                                <div style="font-weight: 700;">${(p.username || 'Unknown').toUpperCase()}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">Requested access</div>
+                            </div>
+                            <button class="btn btn-primary" style="width: auto; padding: 0.5rem 1rem;" onclick="approveUser('${p.id}')">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                         </div>
+                    </div>
+                `).join('');
+            } else {
+                pendingContainer.style.display = 'none';
+            }
+
+            // 2. Handle Approved Users
+            const approvedProfiles = allProfiles.filter(p => p.role === 'admin' || p.role === 'partner');
+            teamList.innerHTML = approvedProfiles.sort((a, b) => (a.username || '').localeCompare(b.username)).map(p => {
                 const isSelf = p.id === user.id;
                 const isUserAdmin = p.role === 'admin';
                 const capitalized = (p.username || 'Unknown').charAt(0).toUpperCase() + (p.username || 'Unknown').slice(1);
@@ -182,6 +220,15 @@
             if (error) alert('Error: ' + error.message);
             else {
                 alert(`Success! ${name} is now a ${targetRole}.`);
+                loadTeam();
+            }
+        }
+
+        async function approveUser(uid) {
+            const { error } = await window.auth.approveMember(uid);
+            if (error) alert("Error: " + error.message);
+            else {
+                alert("User approved successfully!");
                 loadTeam();
             }
         }

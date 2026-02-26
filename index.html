@@ -76,101 +76,127 @@
             </header>
 
 
-            <!-- Stats Grid (6 cards total for 3 rows x 2 columns on mobile) -->
-            <div class="stats-grid">
-                <div class="card stat-card">
-                    <div class="flex-between">
-                        <h3>Total Budget</h3>
-                        <i class="fas fa-edit admin-only hidden" id="editBudgetIcon"
-                            style="cursor: pointer; color: var(--accent); font-size: 0.875rem;"
-                            onclick="showModal('editBudgetModal')"></i>
-                    </div>
-                    <div class="value" id="totalBudget" style="color: var(--accent);">₹0</div>
+            <!-- Guest Banner (Shown to Guests or Pending users) -->
+            <div id="guestJoinBanner" class="card"
+                style="display: none; padding: 2.5rem 1.5rem; text-align: center; background: white; border: 1px solid var(--border); margin: 2rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <div
+                    style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: var(--accent);">
+                    <i class="fas fa-users" style="font-size: 2.5rem;"></i>
                 </div>
-                <div class="card stat-card">
-                    <h3>Total Capital</h3>
-                    <div class="value" id="totalCapital">₹0</div>
-                </div>
-                <div class="card stat-card">
-                    <h3>Current Balance</h3>
-                    <div class="value" id="currentBalance" style="color: var(--success);">₹0</div>
-                </div>
-                <div class="card stat-card">
-                    <h3>Approved Expenses</h3>
-                    <div class="value" id="approvedExpenses" style="color: var(--danger);">₹0</div>
-                </div>
-                <div class="card stat-card">
-                    <h3>Pending Expenses</h3>
-                    <div class="value" id="pendingExpenses" style="color: var(--warning);">₹0</div>
-                </div>
-                <div class="card stat-card"
-                    style="border: 1px solid var(--accent); background: rgba(59, 130, 246, 0.05);">
-                    <h3 style="color: var(--accent);">Active Plans</h3>
-                    <div class="value" id="activePlans">0</div>
-                </div>
-            </div>
-
-            <!-- Readiness Bar -->
-            <div class="card">
-                <div class="flex-between">
-                    <h3 style="font-size: 1rem;">Financial Readiness</h3>
-                    <span id="readinessPercent" font-weight="700">0%</span>
-                </div>
-                <div class="progress-container">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-                <p style="font-size: 0.75rem; color: var(--text-muted);">Calculated against Total Budget.</p>
-            </div>
-
-            <!-- Personal Split Card -->
-            <div id="personalStatusCard" class="card hidden">
-                <div class="flex-between">
-                    <h3 style="font-size: 1.125rem; color: var(--primary);">My Contribution Status</h3>
-                    <i class="fas fa-hand-holding-usd" style="color: var(--accent);"></i>
-                </div>
-
-                <div style="margin: 1.5rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <div>
-                        <p style="font-size: 0.75rem; color: var(--text-muted);">Your Share (Split)</p>
-                        <div class="value" id="personalShare" style="font-size: 1.25rem;">₹0</div>
-                    </div>
-                    <div>
-                        <p style="font-size: 0.75rem; color: var(--text-muted);">You've Paid</p>
-                        <div class="value" id="personalPaid" style="font-size: 1.25rem; color: var(--success);">₹0</div>
-                    </div>
-                </div>
-
-                <div class="progress-container" style="height: 8px; margin-bottom: 1rem;">
-                    <div class="progress-bar" id="personalProgress" style="background: var(--accent);"></div>
-                </div>
-
-                <div id="paymentReminder" class="badge"
-                    style="width: 100%; text-align: center; padding: 0.75rem; display: block; font-size: 0.875rem;">
-                    Checking status...
-                </div>
-
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">
-                    Budget is split equally among <span id="partnerCount">0</span> registered partners.
+                <h2 id="guestBannerTitle" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-dark);">
+                    Welcome
+                    to StreetFit</h2>
+                <p id="guestBannerText"
+                    style="color: var(--text-muted); margin-bottom: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                    To view business stats and start contributing, you must be a member of the team.
                 </p>
-            </div>
-
-            <!-- Create Team Banner (Shown only to Partners) -->
-            <div id="createTeamBanner" class="card"
-                style="display: none; background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; border: none; margin-top: 2rem;">
-                <div class="flex-between" style="flex-wrap: wrap; gap: 1rem;">
-                    <div>
-                        <h2 style="color: white; margin-bottom: 0.25rem;">Start Your Business Team</h2>
-                        <p style="opacity: 0.9; font-size: 0.875rem;">Create a team to manage budgets, expenses, and
-                            partners.</p>
-                    </div>
-                    <button class="btn"
-                        style="background: white; color: var(--accent); width: auto; padding: 0.75rem 1.5rem;"
-                        onclick="handleCreateTeam()">
-                        <i class="fas fa-plus"></i> Create Team Now
+                <div id="guestActionArea">
+                    <button id="joinTeamBtn" class="btn btn-primary" onclick="handleJoinRequest()"
+                        style="width: auto; padding: 0.875rem 2.5rem; font-weight: 600;">
+                        <i class="fas fa-plus"></i> Join Team
                     </button>
+                    <div id="pendingStatus" class="hidden" style="color: var(--accent); font-weight: 600;">
+                        <i class="fas fa-clock"></i> Your request is pending admin approval...
+                    </div>
                 </div>
             </div>
 
+            <div id="dashboardContent">
+                <!-- Stats Grid (6 cards total for 3 rows x 2 columns on mobile) -->
+                <div class="stats-grid">
+                    <div class="card stat-card">
+                        <div class="flex-between">
+                            <h3>Total Budget</h3>
+                            <i class="fas fa-edit admin-only hidden" id="editBudgetIcon"
+                                style="cursor: pointer; color: var(--accent); font-size: 0.875rem;"
+                                onclick="showModal('editBudgetModal')"></i>
+                        </div>
+                        <div class="value" id="totalBudget" style="color: var(--accent);">₹0</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Total Capital</h3>
+                        <div class="value" id="totalCapital">₹0</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Current Balance</h3>
+                        <div class="value" id="currentBalance" style="color: var(--success);">₹0</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Approved Expenses</h3>
+                        <div class="value" id="approvedExpenses" style="color: var(--danger);">₹0</div>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Pending Expenses</h3>
+                        <div class="value" id="pendingExpenses" style="color: var(--warning);">₹0</div>
+                    </div>
+                    <div class="card stat-card"
+                        style="border: 1px solid var(--accent); background: rgba(59, 130, 246, 0.05);">
+                        <h3 style="color: var(--accent);">Active Plans</h3>
+                        <div class="value" id="activePlans">0</div>
+                    </div>
+                </div>
+
+                <!-- Readiness Bar -->
+                <div class="card">
+                    <div class="flex-between">
+                        <h3 style="font-size: 1rem;">Financial Readiness</h3>
+                        <span id="readinessPercent" font-weight="700">0%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">Calculated against Total Budget.</p>
+                </div>
+
+                <!-- Personal Split Card -->
+                <div id="personalStatusCard" class="card hidden">
+                    <div class="flex-between">
+                        <h3 style="font-size: 1.125rem; color: var(--primary);">My Contribution Status</h3>
+                        <i class="fas fa-hand-holding-usd" style="color: var(--accent);"></i>
+                    </div>
+
+                    <div style="margin: 1.5rem 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted);">Your Share (Split)</p>
+                            <div class="value" id="personalShare" style="font-size: 1.25rem;">₹0</div>
+                        </div>
+                        <div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted);">You've Paid</p>
+                            <div class="value" id="personalPaid" style="font-size: 1.25rem; color: var(--success);">₹0
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="progress-container" style="height: 8px; margin-bottom: 1rem;">
+                        <div class="progress-bar" id="personalProgress" style="background: var(--accent);"></div>
+                    </div>
+
+                    <div id="paymentReminder" class="badge"
+                        style="width: 100%; text-align: center; padding: 0.75rem; display: block; font-size: 0.875rem;">
+                        Checking status...
+                    </div>
+
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">
+                        Budget is split equally among <span id="partnerCount">0</span> registered partners.
+                    </p>
+                </div>
+
+                <!-- Create Team Banner (Shown only to Partners) -->
+                <div id="createTeamBanner" class="card"
+                    style="display: none; background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; border: none; margin-top: 2rem;">
+                    <div class="flex-between" style="flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h2 style="color: white; margin-bottom: 0.25rem;">Start Your Business Team</h2>
+                            <p style="opacity: 0.9; font-size: 0.875rem;">Create a team to manage budgets, expenses, and
+                                partners.</p>
+                        </div>
+                        <button class="btn"
+                            style="background: white; color: var(--accent); width: auto; padding: 0.75rem 1.5rem;"
+                            onclick="handleCreateTeam()">
+                            <i class="fas fa-plus"></i> Create Team Now
+                        </button>
+                    </div>
+                </div>
         </main>
     </div>
 
@@ -334,6 +360,24 @@
             }
         }
 
+        async function handleJoinRequest() {
+            const user = await window.auth.getCurrentUser();
+            if (!user) return;
+            const btn = document.getElementById('joinTeamBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
+
+            const { error } = await window.auth.joinTeam(user.id);
+            if (error) {
+                alert("Error: " + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plus"></i> Join Team';
+            } else {
+                // Refresh UI
+                initDashboard();
+            }
+        }
+
         async function initDashboard() {
             loadDashCache();
             const user = await checkAuth();
@@ -356,7 +400,30 @@
 
             // Toggle Edit Icon for Admin
             const isAdmin = user && user.profile?.role === 'admin';
+            const isPartner = user && user.profile?.role === 'partner';
+            const isGuest = user && user.profile?.role === 'guest';
+            const isPending = user && user.profile?.role === 'pending';
+
             if (isAdmin) document.getElementById('editBudgetIcon')?.classList.remove('hidden');
+
+            // Handle Visibility based on Role
+            const guestBanner = document.getElementById('guestJoinBanner');
+            const dashContent = document.getElementById('dashboardContent');
+
+            if (isGuest || isPending) {
+                guestBanner.style.display = 'block';
+                dashContent.style.display = 'none';
+
+                if (isPending) {
+                    document.getElementById('guestBannerTitle').textContent = "Request Pending";
+                    document.getElementById('guestBannerText').textContent = "Your request to join the StreetFit team is awaiting administrator approval. Please check back later.";
+                    document.getElementById('joinTeamBtn').classList.add('hidden');
+                    document.getElementById('pendingStatus').classList.remove('hidden');
+                }
+            } else {
+                guestBanner.style.display = 'none';
+                dashContent.style.display = 'block';
+            }
 
             // Handle "Create Team" banner visibility: Only show if NO team (no admin) exists yet
             const anyAdminExists = allProfiles && allProfiles.some(p => p.role === 'admin');
