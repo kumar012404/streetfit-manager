@@ -450,7 +450,7 @@ async function updateSetting(key, value) {
 }
 
 // ========== GLOBAL EXPORTS ==========
-window.auth = { login, signup, logout, getCurrentUser };
+window.auth = { login, signup, logout, getCurrentUser, createTeam, claimAdminRole, updateUserRole };
 window.db = {
     getContributions, addContribution, deleteContribution, updateContribution,
     getExpenses, addExpense, updateExpenseStatus, deleteExpense, updateExpense,
