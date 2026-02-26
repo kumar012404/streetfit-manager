@@ -135,13 +135,21 @@
     <script>
         let currentUser = null;
 
-        async function loadExpenses() {
-            const user = await checkAuth();
-            const { data: expenses } = await window.db.getExpenses();
-            if (!expenses) return;
+        function loadExpensesCache() {
+            const cached = localStorage.getItem('sf_expenses_cache');
+            if (cached) {
+                const userCache = JSON.parse(sessionStorage.getItem('sf_user_cache') || '{}');
+                const isAdmin = userCache?.profile?.role === 'admin';
+                renderExpensesList(JSON.parse(cached), isAdmin);
+            }
+        }
 
-            const isAdmin = user && user.profile?.role === 'admin';
+        function renderExpensesList(expenses, isAdmin) {
             const list = document.getElementById('expenseList');
+            if (!expenses || expenses.length === 0) {
+                list.innerHTML = '<div class="card" style="text-align: center; color: var(--text-muted);">No expenses found.</div>';
+                return;
+            }
 
             list.innerHTML = expenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(e => `
                 <div class="card">
@@ -170,6 +178,17 @@
                     ` : ''}
                 </div>
             `).join('');
+        }
+
+        async function loadExpenses() {
+            loadExpensesCache();
+            const user = await checkAuth();
+            const { data: expenses } = await window.db.getExpenses();
+            if (!expenses) return;
+
+            const isAdmin = user && user.profile?.role === 'admin';
+            renderExpensesList(expenses, isAdmin);
+            localStorage.setItem('sf_expenses_cache', JSON.stringify(expenses));
         }
 
         async function removeExpense(id) {
