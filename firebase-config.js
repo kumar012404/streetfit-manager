@@ -245,6 +245,29 @@ async function updateUserRole(uid, newRole) {
     }
 }
 
+async function claimAdminRole(providedPin) {
+    const MASTER_PIN = "SF1234"; // You can change this secret code here
+
+    if (providedPin !== MASTER_PIN) {
+        return { error: { message: "Invalid Secret Admin Key!" } };
+    }
+
+    try {
+        const user = await getCurrentUser();
+        if (!user) throw new Error("Not logged in");
+
+        await firebaseDB.collection('profiles').doc(user.id).update({ role: 'admin' });
+
+        // Refresh local cache
+        _cachedUser = null;
+        sessionStorage.clear();
+
+        return { data: true, error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
 async function getExpenses() {
     try {
         const snap = await firebaseDB.collection('expenses').orderBy('created_at', 'desc').get();

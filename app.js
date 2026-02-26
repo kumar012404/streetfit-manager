@@ -41,6 +41,12 @@ async function checkAuth() {
         }
     });
 
+    // Only show "Claim Admin" to partners who are NOT already admins
+    const claimBtn = document.getElementById('claimAdminBtn');
+    if (claimBtn) {
+        claimBtn.style.display = (user && !isAdmin) ? 'block' : 'none';
+    }
+
     // Handle Logic/UI
     const headerLoginBtn = document.getElementById('headerLoginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -96,4 +102,21 @@ function formatCurrency(amount) {
         currency: 'INR',
         maximumFractionDigits: 0
     }).format(amount);
+}
+
+async function requestAdminAccess() {
+    const pin = prompt("Please enter the Secret Admin Key to claim management rights:");
+    if (!pin) return;
+
+    try {
+        const { data, error } = await window.auth.claimAdminRole(pin);
+        if (error) {
+            alert("❌ " + error.message);
+        } else {
+            alert("✅ Successfully promoted to Admin! The app will now reload.");
+            window.location.reload();
+        }
+    } catch (err) {
+        alert("An error occurred. Please try again.");
+    }
 }
