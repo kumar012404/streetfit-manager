@@ -16,6 +16,17 @@
 </head>
 
 <body>
+    <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
+    <div class="mobile-header-fix">
+        <div class="header-spacer"></div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; color: var(--primary);">StreetFit</h2>
+        <div class="profile-container">
+            <div class="profile-btn" onclick="document.getElementById('userRoleBadgeMobile').classList.toggle('show')">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div id="userRoleBadgeMobile" class="badge badge-pending">Admin</div>
+        </div>
+    </div>
     <div class="app-container">
         <!-- Sidebar -->
         <nav class="sidebar" id="sidebar">
@@ -41,9 +52,16 @@
         <main class="main-content">
             <header class="flex-between" style="margin-bottom: 2rem;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button class="btn btn-ghost" id="menuToggle" style="padding: 0.5rem; width: auto;"><i
-                            class="fas fa-bars"></i></button>
                     <h1>Manage Team</h1>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div class="profile-container hide-mobile">
+                        <div class="profile-btn"
+                            onclick="document.getElementById('userRoleBadge').classList.toggle('show')">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div id="userRoleBadge" class="badge badge-approved">Admin</div>
+                    </div>
                 </div>
             </header>
 
