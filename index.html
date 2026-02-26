@@ -335,46 +335,21 @@
             const finalBudget = manualBudget > 0 ? manualBudget : plansSum;
             const readiness = finalBudget > 0 ? Math.min(Math.round((balance / finalBudget) * 100), 100) : 100;
 
-            // Personal Split Logic
-            const statusCard = document.getElementById('personalStatusCard');
-            if (user && user.profile && user.profile.role === 'partner') {
-                const partners = (allProfiles || []).filter(p => p.role === 'partner');
-                const partnerCount = partners.length || 1;
-                const personalShare = finalBudget / partnerCount;
-                const userContributions = (contributions || []).filter(c => c.partner_id === user.id);
-                const totalUserPaid = userContributions.reduce((sum, c) => sum + c.amount, 0);
-                const remaining = Math.max(0, personalShare - totalUserPaid);
-                const paidPercent = Math.min(100, Math.round((totalUserPaid / personalShare) * 100)) || 0;
-
-                statusCard.classList.remove('hidden');
-
-                document.getElementById('personalShare').textContent = `₹${Math.round(personalShare).toLocaleString()}`;
-                document.getElementById('personalPaid').textContent = `₹${totalUserPaid.toLocaleString()}`;
-                document.getElementById('partnerCount').textContent = partnerCount;
-                document.getElementById('personalProgress').style.width = `${paidPercent}%`;
-
-                const reminderEl = document.getElementById('paymentReminder');
-                if (remaining > 0) {
-                    reminderEl.textContent = `Pending: ₹${Math.round(remaining).toLocaleString()} more to pay.`;
-                    reminderEl.className = 'badge badge-pending';
-                } else {
-                    reminderEl.textContent = 'Great! Your share is fully paid.';
-                    reminderEl.className = 'badge badge-approved';
-                }
-            } else {
-                statusCard?.classList.add('hidden');
-            }
+            // Personal Split Calculations
+            const partners = (allProfiles || []).filter(p => p.role === 'partner');
+            const partnerCount = partners.length || 1;
+            const personalShare = finalBudget / partnerCount;
+            const userContributions = (contributions || []).filter(c => c.partner_id === user?.id);
+            const totalUserPaid = userContributions.reduce((sum, c) => sum + c.amount, 0);
+            const remaining = Math.max(0, personalShare - totalUserPaid);
+            const paidPercent = Math.min(100, Math.round((totalUserPaid / personalShare) * 100)) || 0;
 
             // Package data for cache & UI update
             const dashData = {
                 totalCapital, approvedExp, pendingExpVal, balance,
                 activePlansCount: activePlans.length, finalBudget, readiness,
                 showPersonal: user && user.profile && user.profile.role === 'partner',
-                personalShare: (user && user.profile && user.profile.role === 'partner') ? personalShare : 0,
-                totalUserPaid: (user && user.profile && user.profile.role === 'partner') ? totalUserPaid : 0,
-                partnerCount: (user && user.profile && user.profile.role === 'partner') ? partnerCount : 0,
-                paidPercent: (user && user.profile && user.profile.role === 'partner') ? paidPercent : 0,
-                remaining: (user && user.profile && user.profile.role === 'partner') ? remaining : 0
+                personalShare, totalUserPaid, partnerCount, paidPercent, remaining
             };
 
             updateDashUI(dashData);
