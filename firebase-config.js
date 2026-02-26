@@ -40,6 +40,9 @@ firebaseDB.enablePersistence()
 async function login(username, password) {
     const email = username.includes('@') ? username : `${username.toLowerCase()}@streetfit.local`;
     try {
+        // Force logout current user first to ensure a clean slate
+        try { await firebaseAuth.signOut(); } catch (e) { }
+
         const result = await firebaseAuth.signInWithEmailAndPassword(email, password);
         // CRITICAL: Clear all caches so the new user's data loads fresh
         _cachedUser = null;
@@ -85,10 +88,10 @@ async function signup(username, password) {
 async function logout() {
     try {
         await firebaseAuth.signOut();
-        // Clear all caches
+        // Clear all caches and session data
         _cachedUser = null;
         _cachedProfilesMap = null;
-        sessionStorage.removeItem('sf_user_cache');
+        sessionStorage.clear();
         localStorage.removeItem('sf_dash_cache');
         localStorage.removeItem('sf_contribs_cache');
         localStorage.removeItem('sf_expenses_cache');
@@ -124,8 +127,12 @@ async function getCurrentUser() {
                     if (doc.exists) {
                         profileData = doc.data();
                     } else {
-                        profileData = { id: user.uid, username: user.email.split('@')[0], role: 'partner' };
-                        // Self-healing: Create the missing profile doc
+                        // FIX: Detect if this is the admin user
+                        const username = user.email.split('@')[0];
+                        const role = (username === 'admin') ? 'admin' : 'partner';
+
+                        profileData = { id: user.uid, username: username, role: role };
+                        // Self-healing: Create the missing profile doc with correct role
                         await firebaseDB.collection('profiles').doc(user.uid).set({
                             ...profileData,
                             created_at: firebase.firestore.FieldValue.serverTimestamp()
