@@ -224,7 +224,19 @@
             }
         });
 
+        // Instant Cache Loader for Plans
+        function loadPlansCache() {
+            const cachedPlans = localStorage.getItem('sf_plans_cache');
+            if (cachedPlans) {
+                const userCache = JSON.parse(sessionStorage.getItem('sf_user_cache') || '{}');
+                const isAdmin = userCache?.profile?.role === 'admin';
+                renderPlansList(JSON.parse(cachedPlans), isAdmin);
+            }
+        }
+
         async function loadPlans() {
+            loadPlansCache(); // Initial instant load
+
             const user = await checkAuth();
             currentUser = user;
             const isAdmin = user && user.profile && user.profile.role === 'admin';
@@ -278,6 +290,13 @@
                 generateOptions('customEditPartner', 'editPlanPartner');
             }
 
+            renderPlansList(plans, isAdmin);
+
+            // Save to cache for next time
+            localStorage.setItem('sf_plans_cache', JSON.stringify(plans));
+        }
+
+        function renderPlansList(plans, isAdmin) {
             const list = document.getElementById('planList');
 
             if (!plans || plans.length === 0) {
