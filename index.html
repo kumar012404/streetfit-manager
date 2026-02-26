@@ -75,22 +75,6 @@
                 </div>
             </header>
 
-            <!-- Create Team Banner (Shown only to Partners) -->
-            <div id="createTeamBanner" class="card"
-                style="display: none; background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; border: none; margin-bottom: 2rem;">
-                <div class="flex-between" style="flex-wrap: wrap; gap: 1rem;">
-                    <div>
-                        <h2 style="color: white; margin-bottom: 0.25rem;">Start Your Business Team</h2>
-                        <p style="opacity: 0.9; font-size: 0.875rem;">Create a team to manage budgets, expenses, and
-                            partners.</p>
-                    </div>
-                    <button class="btn"
-                        style="background: white; color: var(--accent); width: auto; padding: 0.75rem 1.5rem;"
-                        onclick="handleCreateTeam()">
-                        <i class="fas fa-plus"></i> Create Team Now
-                    </button>
-                </div>
-            </div>
 
             <!-- Stats Grid (6 cards total for 3 rows x 2 columns on mobile) -->
             <div class="stats-grid">
@@ -168,6 +152,23 @@
                 <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">
                     Budget is split equally among <span id="partnerCount">0</span> registered partners.
                 </p>
+            </div>
+
+            <!-- Create Team Banner (Shown only to Partners) -->
+            <div id="createTeamBanner" class="card"
+                style="display: none; background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; border: none; margin-top: 2rem;">
+                <div class="flex-between" style="flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 style="color: white; margin-bottom: 0.25rem;">Start Your Business Team</h2>
+                        <p style="opacity: 0.9; font-size: 0.875rem;">Create a team to manage budgets, expenses, and
+                            partners.</p>
+                    </div>
+                    <button class="btn"
+                        style="background: white; color: var(--accent); width: auto; padding: 0.75rem 1.5rem;"
+                        onclick="handleCreateTeam()">
+                        <i class="fas fa-plus"></i> Create Team Now
+                    </button>
+                </div>
             </div>
 
         </main>
