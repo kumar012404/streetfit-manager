@@ -66,8 +66,35 @@
                 </div>
             </header>
 
-            <div id="planList" class="todo-list">
-                <!-- Tasks will be rendered here -->
+            <div id="guestJoinBanner" class="card"
+                style="display: none; padding: 4rem 2rem; text-align: center; background: white; border: 1px solid var(--border); margin: 2rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <div
+                    style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: var(--accent);">
+                    <i class="fas fa-users" style="font-size: 2.5rem;"></i>
+                </div>
+                <h2 id="guestBannerTitle" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-dark);">
+                    Welcome
+                    to StreetFit</h2>
+                <p id="guestBannerText"
+                    style="color: var(--text-muted); margin-bottom: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                    To view business goals and track projects, you must be a member of the team.
+                </p>
+                <div id="guestActionArea">
+                    <a href="index.html" class="btn btn-primary"
+                        style="width: auto; padding: 0.875rem 2.5rem; font-weight: 600; display: inline-block;">
+                        <i class="fas fa-arrow-left"></i> Go to Join Team
+                    </a>
+                    <div id="pendingStatus" class="hidden"
+                        style="color: var(--accent); font-weight: 600; margin-top: 1rem;">
+                        <i class="fas fa-clock"></i> Your request is pending admin approval...
+                    </div>
+                </div>
+            </div>
+
+            <div id="plansContent">
+                <div id="planList" class="todo-list">
+                    <!-- Tasks will be rendered here -->
+                </div>
             </div>
         </main>
     </div>

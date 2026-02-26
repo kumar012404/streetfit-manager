@@ -45,6 +45,53 @@ function syncAdminUI() {
     });
 
 
+    // 3. Handle Guest/Pending Redirection/UI
+    const guestBanner = document.getElementById('guestJoinBanner');
+    const mainContent = document.querySelector('.main-content');
+    // We look for a wrapper that should be hidden if not a member
+    const dashboardContent = document.getElementById('dashboardContent') ||
+        document.getElementById('expensesContent') ||
+        document.getElementById('plansContent') ||
+        document.getElementById('contributionsContent') ||
+        document.getElementById('teamContent');
+
+    if (user && (user.profile?.role === 'guest' || user.profile?.role === 'pending')) {
+        const isPending = user.profile?.role === 'pending';
+        if (guestBanner) {
+            guestBanner.style.display = 'block';
+            if (isPending) {
+                const title = document.getElementById('guestBannerTitle');
+                const text = document.getElementById('guestBannerText');
+                const btn = document.getElementById('joinTeamBtn');
+                const pendingStatus = document.getElementById('pendingStatus');
+
+                if (title) title.textContent = "Request Pending";
+                if (text) text.textContent = "Your request to join the StreetFit team is awaiting administrator approval. Please check back later.";
+                if (btn) btn.classList.add('hidden');
+                if (pendingStatus) pendingStatus.classList.remove('hidden');
+            }
+        }
+        if (dashboardContent) dashboardContent.style.display = 'none';
+        else if (mainContent && !guestBanner) {
+            // Check if we already added restriction message to avoid duplicates
+            if (!mainContent.querySelector('.restriction-message')) {
+                mainContent.innerHTML = `<div class="card restriction-message" style="text-align:center; padding: 4rem 2rem; margin-top:2rem;">
+                    <div style="width: 80px; height: 80px; background: rgba(59, 130, 246, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: var(--accent);">
+                        <i class="fas fa-lock" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-dark);">Access Restricted</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                        You must be a member of the team to view this page. Please go to the <a href="index.html" style="color:var(--accent); text-decoration:underline;">Dashboard</a> to join the team.
+                    </p>
+                </div>`;
+            }
+        }
+    } else if (guestBanner) {
+        guestBanner.style.display = 'none';
+        if (dashboardContent) dashboardContent.style.display = 'block';
+    }
+
+
     // 4. Update Header Buttons & Badges
     const headerLoginBtn = document.getElementById('headerLoginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -133,10 +180,10 @@ async function requestAdminAccess() {
         if (error) {
             alert("❌ " + error.message);
         } else {
-            alert("✅ Successfully promoted to Admin! The app will now reload.");
-            window.location.reload();
+            alert("✅ Admin rights granted!");
+            location.reload();
         }
     } catch (err) {
-        alert("An error occurred. Please try again.");
+        alert("❌ Request failed.");
     }
 }
