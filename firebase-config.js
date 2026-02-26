@@ -14,6 +14,10 @@ const firebaseConfig = {
     appId: "1:878167942999:web:623831d518335cfbcd0012"
 };
 
+// ========== CACHE SYSTEM ==========
+let _cachedUser = null;
+let _cachedProfilesMap = null;
+
 // Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -37,6 +41,9 @@ async function login(username, password) {
     const email = username.includes('@') ? username : `${username.toLowerCase()}@streetfit.local`;
     try {
         const result = await firebaseAuth.signInWithEmailAndPassword(email, password);
+        // Clear caches on login
+        _cachedUser = null;
+        _cachedProfilesMap = null;
         return { data: result, error: null };
     } catch (err) {
         return { data: null, error: { message: err.message } };
@@ -72,6 +79,10 @@ async function signup(username, password) {
 async function logout() {
     try {
         await firebaseAuth.signOut();
+        // Clear caches
+        _cachedUser = null;
+        _cachedProfilesMap = null;
+        sessionStorage.removeItem('sf_user_cache');
         window.location.href = 'auth.html';
     } catch (err) {
         console.error('Logout error:', err);
@@ -79,6 +90,17 @@ async function logout() {
 }
 
 async function getCurrentUser() {
+    // 1. Check in-memory cache
+    if (_cachedUser) return _cachedUser;
+
+    // 2. Check session storage for instant load
+    const saved = sessionStorage.getItem('sf_user_cache');
+    if (saved) {
+        _cachedUser = JSON.parse(saved);
+        // We still verify in background, but return cached immediately
+        return _cachedUser;
+    }
+
     return new Promise((resolve) => {
         const unsubscribe = firebaseAuth.onAuthStateChanged(async (user) => {
             unsubscribe();
@@ -86,14 +108,16 @@ async function getCurrentUser() {
                 try {
                     const doc = await firebaseDB.collection('profiles').doc(user.uid).get();
                     if (doc.exists) {
-                        resolve({ ...user, id: user.uid, profile: doc.data() });
+                        _cachedUser = { ...user, id: user.uid, profile: doc.data() };
                     } else {
-                        resolve({
+                        _cachedUser = {
                             ...user,
                             id: user.uid,
                             profile: { id: user.uid, username: user.email.split('@')[0], role: 'partner' }
-                        });
+                        };
                     }
+                    sessionStorage.setItem('sf_user_cache', JSON.stringify(_cachedUser));
+                    resolve(_cachedUser);
                 } catch (err) {
                     resolve(null);
                 }
@@ -118,17 +142,26 @@ function docToObj(doc) {
     return { id: doc.id, ...data };
 }
 
+/**
+ * Gets profiles map with caching to avoid redundant fetches
+ */
+async function getProfilesMap() {
+    if (_cachedProfilesMap) return _cachedProfilesMap;
+
+    const profileSnap = await firebaseDB.collection('profiles').get();
+    _cachedProfilesMap = {};
+    profileSnap.docs.forEach(doc => {
+        _cachedProfilesMap[doc.id] = doc.data();
+    });
+    return _cachedProfilesMap;
+}
+
 async function getContributions() {
     try {
         const snap = await firebaseDB.collection('contributions').orderBy('created_at', 'desc').get();
         const contributions = snap.docs.map(docToObj);
 
-        // Fetch all profiles once to avoid individual round-trips (N+1 problem)
-        const profileSnap = await firebaseDB.collection('profiles').get();
-        const profilesMap = {};
-        profileSnap.docs.forEach(doc => {
-            profilesMap[doc.id] = doc.data();
-        });
+        const profilesMap = await getProfilesMap();
 
         contributions.forEach(c => {
             if (c.partner_id) {
@@ -179,12 +212,7 @@ async function getExpenses() {
         const snap = await firebaseDB.collection('expenses').orderBy('created_at', 'desc').get();
         const expenses = snap.docs.map(docToObj);
 
-        // Fetch all profiles once to avoid individual round-trips
-        const profileSnap = await firebaseDB.collection('profiles').get();
-        const profilesMap = {};
-        profileSnap.docs.forEach(doc => {
-            profilesMap[doc.id] = doc.data();
-        });
+        const profilesMap = await getProfilesMap();
 
         expenses.forEach(e => {
             if (e.partner_id) {

@@ -255,7 +255,30 @@
     <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script>
+        // Instant Cache Loader for "Zero Wait" experience
+        function loadDashCache() {
+            const cached = localStorage.getItem('sf_dash_cache');
+            if (cached) {
+                const data = JSON.parse(cached);
+                updateDashUI(data);
+            }
+        }
+
+        function updateDashUI(data) {
+            if (!data) return;
+            document.getElementById('totalCapital').textContent = `₹${data.totalCapital.toLocaleString()}`;
+            document.getElementById('totalBudget').textContent = `₹${data.finalBudget.toLocaleString()}`;
+            document.getElementById('approvedExpenses').textContent = `₹${data.approvedExp.toLocaleString()}`;
+            document.getElementById('currentBalance').textContent = `₹${data.balance.toLocaleString()}`;
+            document.getElementById('pendingExpenses').textContent = `₹${data.pendingExpVal.toLocaleString()}`;
+            document.getElementById('activePlans').textContent = data.activePlansCount;
+
+            document.getElementById('readinessPercent').textContent = `${data.readiness}%`;
+            document.getElementById('progressBar').style.width = `${data.readiness}%`;
+        }
+
         async function initDashboard() {
+            loadDashCache();
             const user = await checkAuth();
 
             // Fetch Data
@@ -321,16 +344,14 @@
                 statusCard?.classList.add('hidden');
             }
 
-            // Update UI
-            document.getElementById('totalCapital').textContent = `₹${totalCapital.toLocaleString()}`;
-            document.getElementById('totalBudget').textContent = `₹${finalBudget.toLocaleString()}`;
-            document.getElementById('approvedExpenses').textContent = `₹${approvedExp.toLocaleString()}`;
-            document.getElementById('currentBalance').textContent = `₹${balance.toLocaleString()}`;
-            document.getElementById('pendingExpenses').textContent = `₹${pendingExpVal.toLocaleString()}`;
-            document.getElementById('activePlans').textContent = activePlans.length;
+            // Package data for cache & UI update
+            const dashData = {
+                totalCapital, approvedExp, pendingExpVal, balance,
+                activePlansCount: activePlans.length, finalBudget, readiness
+            };
 
-            document.getElementById('readinessPercent').textContent = `${readiness}%`;
-            document.getElementById('progressBar').style.width = `${readiness}%`;
+            updateDashUI(dashData);
+            localStorage.setItem('sf_dash_cache', JSON.stringify(dashData));
 
             // Set input value in modal
             document.getElementById('newBudgetValue').value = manualBudget;
