@@ -44,11 +44,6 @@ function syncAdminUI() {
         }
     });
 
-    // 3. Create Team Banner for Partners
-    const createTeamBanner = document.getElementById('createTeamBanner');
-    if (createTeamBanner) {
-        createTeamBanner.style.display = (user && !isAdmin) ? 'block' : 'none';
-    }
 
     // 4. Update Header Buttons & Badges
     const headerLoginBtn = document.getElementById('headerLoginBtn');

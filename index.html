@@ -358,6 +358,14 @@
             const isAdmin = user && user.profile?.role === 'admin';
             if (isAdmin) document.getElementById('editBudgetIcon')?.classList.remove('hidden');
 
+            // Handle "Create Team" banner visibility: Only show if NO team (no admin) exists yet
+            const anyAdminExists = allProfiles && allProfiles.some(p => p.role === 'admin');
+            const banner = document.getElementById('createTeamBanner');
+            if (banner) {
+                // Show only if no admin exists AND current user is not already an admin
+                banner.style.display = (!anyAdminExists && !isAdmin && user) ? 'block' : 'none';
+            }
+
             // Calculations
             const totalCapital = (contributions || []).reduce((sum, c) => sum + c.amount, 0);
             const approvedExp = (expenses || []).filter(e => e.status === 'approved').reduce((sum, e) => sum + e.amount, 0);
