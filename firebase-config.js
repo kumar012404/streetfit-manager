@@ -83,6 +83,33 @@ async function signup(username, password, role = null) {
     }
 }
 
+async function createMember(username, password) {
+    const email = username.includes('@') ? username : `${username.toLowerCase()}@streetfit.local`;
+    try {
+        // Create a secondary app to avoid logging out the admin
+        const secondaryApp = firebase.initializeApp(firebaseConfig, "secondary");
+        const secondaryAuth = secondaryApp.auth();
+        const result = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+        const user = result.user;
+
+        const profileData = {
+            id: user.uid,
+            email: email,
+            username: username.toLowerCase(),
+            role: 'partner',
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await firebaseDB.collection('profiles').doc(user.uid).set(profileData);
+
+        // Clean up secondary app
+        await secondaryApp.delete();
+
+        return { data: profileData, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
 async function logout() {
     try {
         await firebaseAuth.signOut();
@@ -450,7 +477,7 @@ async function updateSetting(key, value) {
 }
 
 // ========== GLOBAL EXPORTS ==========
-window.auth = { login, signup, logout, getCurrentUser, createTeam, claimAdminRole, updateUserRole };
+window.auth = { login, signup, logout, getCurrentUser, createMember, createTeam, claimAdminRole, updateUserRole };
 window.db = {
     getContributions, addContribution, deleteContribution, updateContribution,
     getExpenses, addExpense, updateExpenseStatus, deleteExpense, updateExpense,
