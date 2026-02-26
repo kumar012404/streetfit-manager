@@ -233,6 +233,17 @@ async function updateContribution(id, amount) {
     }
 }
 
+async function updateUserRole(uid, newRole) {
+    try {
+        await firebaseDB.collection('profiles').doc(uid).update({ role: newRole });
+        // Clear caches to force refresh
+        _cachedProfilesMap = null;
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
 async function getExpenses() {
     try {
         const snap = await firebaseDB.collection('expenses').orderBy('created_at', 'desc').get();
