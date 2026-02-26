@@ -138,40 +138,36 @@
     <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script>
-        async function loadContributions() {
-            const user = await checkAuth();
-
-            const [
-                { data: contribs },
-                { data: profiles }
-            ] = await Promise.all([
-                window.db.getContributions(),
-                window.db.getProfiles()
-            ]);
-
-            if (!contribs || !profiles) return;
-
-            if (profiles && contribs) {
-                const partnerList = document.getElementById('partnerList');
-                partnerList.innerHTML = profiles.filter(p => p.role === 'partner').map(p => {
-                    // Match by username as it's proven to work in the history section below
-                    const total = contribs
-                        .filter(c => c.profiles?.username === p.username)
-                        .reduce((sum, c) => sum + c.amount, 0);
-
-                    const capitalized = p.username.charAt(0).toUpperCase() + p.username.slice(1);
-                    return `
-                        <div class="flex-between" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
-                            <span>${capitalized}</span>
-                            <span style="font-weight: 700; color: ${total > 0 ? 'var(--primary)' : 'var(--text-muted)'};">
-                                ₹${total.toLocaleString()}
-                            </span>
-                        </div>
-                    `;
-                }).join('');
+        function loadContributionsCache() {
+            const cachedContribs = localStorage.getItem('sf_contribs_cache');
+            const cachedProfiles = localStorage.getItem('sf_profiles_cache');
+            if (cachedContribs && cachedProfiles) {
+                const userCache = JSON.parse(sessionStorage.getItem('sf_user_cache') || '{}');
+                const isAdmin = userCache?.profile?.role === 'admin';
+                renderContributionsUI(JSON.parse(cachedContribs), JSON.parse(cachedProfiles), isAdmin);
             }
+        }
 
-            const isAdmin = user && user.profile && user.profile.role === 'admin';
+        function renderContributionsUI(contribs, profiles, isAdmin) {
+            if (!profiles || !contribs) return;
+
+            const partnerList = document.getElementById('partnerList');
+            partnerList.innerHTML = profiles.filter(p => p.role === 'partner').map(p => {
+                const total = contribs
+                    .filter(c => c.profiles?.username === p.username)
+                    .reduce((sum, c) => sum + c.amount, 0);
+
+                const capitalized = p.username.charAt(0).toUpperCase() + p.username.slice(1);
+                return `
+                    <div class="flex-between" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                        <span>${capitalized}</span>
+                        <span style="font-weight: 700; color: ${total > 0 ? 'var(--primary)' : 'var(--text-muted)'};">
+                            ₹${total.toLocaleString()}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+
             const history = document.getElementById('contributionHistory');
             history.innerHTML = contribs.sort((a, b) => new Date(b.date) - new Date(a.date)).map(c => {
                 const capitalized = (c.profiles?.username || '').charAt(0).toUpperCase() + (c.profiles?.username || '').slice(1);
@@ -194,6 +190,28 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        async function loadContributions() {
+            loadContributionsCache();
+            const user = await checkAuth();
+
+            const [
+                { data: contribs },
+                { data: profiles }
+            ] = await Promise.all([
+                window.db.getContributions(),
+                window.db.getProfiles()
+            ]);
+
+            if (!contribs || !profiles) return;
+
+            const isAdmin = user && user.profile && user.profile.role === 'admin';
+            renderContributionsUI(contribs, profiles, isAdmin);
+
+            // Save to cache
+            localStorage.setItem('sf_contribs_cache', JSON.stringify(contribs));
+            localStorage.setItem('sf_profiles_cache', JSON.stringify(profiles));
         }
 
         async function deleteContrib(id) {
