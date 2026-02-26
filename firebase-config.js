@@ -121,15 +121,21 @@ function docToObj(doc) {
 async function getContributions() {
     try {
         const snap = await firebaseDB.collection('contributions').orderBy('created_at', 'desc').get();
-        const contributions = [];
-        for (const doc of snap.docs) {
-            const data = docToObj(doc);
-            if (data.partner_id) {
-                const profileDoc = await firebaseDB.collection('profiles').doc(data.partner_id).get();
-                data.profiles = profileDoc.exists ? profileDoc.data() : null;
+        const contributions = snap.docs.map(docToObj);
+
+        // Fetch all profiles once to avoid individual round-trips (N+1 problem)
+        const profileSnap = await firebaseDB.collection('profiles').get();
+        const profilesMap = {};
+        profileSnap.docs.forEach(doc => {
+            profilesMap[doc.id] = doc.data();
+        });
+
+        contributions.forEach(c => {
+            if (c.partner_id) {
+                c.profiles = profilesMap[c.partner_id] || null;
             }
-            contributions.push(data);
-        }
+        });
+
         return { data: contributions, error: null };
     } catch (err) {
         return { data: null, error: { message: err.message } };
@@ -171,15 +177,21 @@ async function updateContribution(id, amount) {
 async function getExpenses() {
     try {
         const snap = await firebaseDB.collection('expenses').orderBy('created_at', 'desc').get();
-        const expenses = [];
-        for (const doc of snap.docs) {
-            const data = docToObj(doc);
-            if (data.partner_id) {
-                const profileDoc = await firebaseDB.collection('profiles').doc(data.partner_id).get();
-                data.profiles = profileDoc.exists ? profileDoc.data() : null;
+        const expenses = snap.docs.map(docToObj);
+
+        // Fetch all profiles once to avoid individual round-trips
+        const profileSnap = await firebaseDB.collection('profiles').get();
+        const profilesMap = {};
+        profileSnap.docs.forEach(doc => {
+            profilesMap[doc.id] = doc.data();
+        });
+
+        expenses.forEach(e => {
+            if (e.partner_id) {
+                e.profiles = profilesMap[e.partner_id] || null;
             }
-            expenses.push(data);
-        }
+        });
+
         return { data: expenses, error: null };
     } catch (err) {
         return { data: null, error: { message: err.message } };

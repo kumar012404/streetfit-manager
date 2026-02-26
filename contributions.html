@@ -141,8 +141,13 @@
         async function loadContributions() {
             const user = await checkAuth();
 
-            const { data: contribs } = await window.db.getContributions();
-            const { data: profiles } = await window.db.getProfiles();
+            const [
+                { data: contribs },
+                { data: profiles }
+            ] = await Promise.all([
+                window.db.getContributions(),
+                window.db.getProfiles()
+            ]);
 
             if (!contribs || !profiles) return;
 

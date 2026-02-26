@@ -229,8 +229,13 @@
             currentUser = user;
             const isAdmin = user && user.profile && user.profile.role === 'admin';
 
-            const { data: plans, error } = await window.db.getPlans();
-            const { data: profiles } = await window.db.getProfiles();
+            const [
+                { data: plans, error },
+                { data: profiles }
+            ] = await Promise.all([
+                window.db.getPlans(),
+                window.db.getProfiles()
+            ]);
 
             if (error) {
                 console.error("Error loading plans:", error);

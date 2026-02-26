@@ -259,11 +259,20 @@
             const user = await checkAuth();
 
             // Fetch Data
-            const { data: contributions } = await window.db.getContributions();
-            const { data: expenses } = await window.db.getExpenses();
-            const { data: plans } = await window.db.getPlans();
-            const { data: allProfiles } = await window.db.getProfiles();
-            const manualBudget = await window.db.getSetting('target_budget');
+            // Fetch Data in parallel for better performance
+            const [
+                { data: contributions },
+                { data: expenses },
+                { data: plans },
+                { data: allProfiles },
+                manualBudget
+            ] = await Promise.all([
+                window.db.getContributions(),
+                window.db.getExpenses(),
+                window.db.getPlans(),
+                window.db.getProfiles(),
+                window.db.getSetting('target_budget')
+            ]);
 
             // Toggle Edit Icon for Admin
             const isAdmin = user && user.profile?.role === 'admin';
