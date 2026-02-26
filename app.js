@@ -41,10 +41,10 @@ async function checkAuth() {
         }
     });
 
-    // Only show "Claim Admin" to partners who are NOT already admins
-    const claimBtn = document.getElementById('claimAdminBtn');
-    if (claimBtn) {
-        claimBtn.style.display = (user && !isAdmin) ? 'block' : 'none';
+    // Create Team Banner for Partners
+    const createTeamBanner = document.getElementById('createTeamBanner');
+    if (createTeamBanner) {
+        createTeamBanner.style.display = (user && !isAdmin) ? 'block' : 'none';
     }
 
     // Handle Logic/UI

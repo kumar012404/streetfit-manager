@@ -65,11 +65,8 @@ async function signup(username, password, role = null) {
         const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
         const user = result.user;
 
-        // If no role provided, check if first user (auto-admin)
-        if (!role) {
-            const profilesSnap = await firebaseDB.collection('profiles').limit(1).get();
-            role = profilesSnap.empty ? 'admin' : 'partner';
-        }
+        // All new users start as Partner
+        const role = 'partner';
 
         const profileData = {
             id: user.uid,
@@ -241,6 +238,24 @@ async function updateUserRole(uid, newRole) {
         // Clear caches to force refresh
         _cachedProfilesMap = null;
         return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function createTeam() {
+    try {
+        const user = await getCurrentUser();
+        if (!user) throw new Error("Not logged in");
+
+        // Update role to admin
+        await firebaseDB.collection('profiles').doc(user.id).update({ role: 'admin' });
+
+        // Clear caches
+        _cachedUser = null;
+        sessionStorage.clear();
+
+        return { data: true, error: null };
     } catch (err) {
         return { error: { message: err.message } };
     }
