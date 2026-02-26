@@ -106,9 +106,12 @@ async function getCurrentUser() {
     // 2. Check session storage for instant load
     const saved = sessionStorage.getItem('sf_user_cache');
     if (saved) {
-        _cachedUser = JSON.parse(saved);
-        // We still verify in background, but return cached immediately
-        return _cachedUser;
+        const parsed = JSON.parse(saved);
+        // Only trust if uid exists and looks valid
+        if (parsed && parsed.id) {
+            _cachedUser = parsed;
+            return _cachedUser;
+        }
     }
 
     return new Promise((resolve) => {
@@ -117,21 +120,27 @@ async function getCurrentUser() {
             if (user) {
                 try {
                     const doc = await firebaseDB.collection('profiles').doc(user.uid).get();
+                    let profileData;
                     if (doc.exists) {
-                        _cachedUser = { ...user, id: user.uid, profile: doc.data() };
+                        profileData = doc.data();
                     } else {
-                        _cachedUser = {
-                            ...user,
-                            id: user.uid,
-                            profile: { id: user.uid, username: user.email.split('@')[0], role: 'partner' }
-                        };
+                        profileData = { id: user.uid, username: user.email.split('@')[0], role: 'partner' };
+                        // Self-healing: Create the missing profile doc
+                        await firebaseDB.collection('profiles').doc(user.uid).set({
+                            ...profileData,
+                            created_at: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                     }
+                    _cachedUser = { ...user, id: user.uid, profile: profileData };
                     sessionStorage.setItem('sf_user_cache', JSON.stringify(_cachedUser));
                     resolve(_cachedUser);
                 } catch (err) {
+                    console.error("Auth Listener Error:", err);
                     resolve(null);
                 }
             } else {
+                _cachedUser = null;
+                sessionStorage.removeItem('sf_user_cache');
                 resolve(null);
             }
         });

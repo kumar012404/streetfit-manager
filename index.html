@@ -258,9 +258,14 @@
         // Instant Cache Loader for "Zero Wait" experience
         function loadDashCache() {
             const cached = localStorage.getItem('sf_dash_cache');
-            if (cached) {
+            const userCached = JSON.parse(sessionStorage.getItem('sf_user_cache') || 'null');
+
+            if (cached && userCached) {
                 const data = JSON.parse(cached);
-                updateDashUI(data);
+                // ONLY show cached numbers if they belong to the person currently in the session
+                if (data.owner_uid === userCached.id) {
+                    updateDashUI(data);
+                }
             }
         }
 
@@ -346,6 +351,7 @@
 
             // Package data for cache & UI update
             const dashData = {
+                owner_uid: user?.id,
                 totalCapital, approvedExp, pendingExpVal, balance,
                 activePlansCount: activePlans.length, finalBudget, readiness,
                 showPersonal: user && user.profile && user.profile.role === 'partner',
