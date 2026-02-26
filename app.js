@@ -24,33 +24,35 @@ document.addEventListener('click', (e) => {
 /**
  * Authentication & Role Protection
  */
-async function checkAuth() {
-    const user = await window.auth.getCurrentUser();
-
-    // Check if user is Admin
+function syncAdminUI() {
+    // 1. Instant check from session cache
+    const saved = sessionStorage.getItem('sf_user_cache');
+    const user = saved ? JSON.parse(saved) : null;
     const isAdmin = user && user.profile && user.profile.role === 'admin';
 
-    // Handle role-based UI
+    // 2. Handle role-based UI visibility
     const adminElements = document.querySelectorAll('.admin-only');
-
     adminElements.forEach(el => {
         if (isAdmin) {
             el.classList.remove('hidden');
+            // If it's a bottom-nav-item, ensure it's visible on mobile
+            if (el.classList.contains('bottom-nav-item') && window.innerWidth <= 768) {
+                el.style.display = 'flex';
+            }
         } else {
             el.classList.add('hidden');
         }
     });
 
-    // Create Team Banner for Partners
+    // 3. Create Team Banner for Partners
     const createTeamBanner = document.getElementById('createTeamBanner');
     if (createTeamBanner) {
         createTeamBanner.style.display = (user && !isAdmin) ? 'block' : 'none';
     }
 
-    // Handle Logic/UI
+    // 4. Update Header Buttons & Badges
     const headerLoginBtn = document.getElementById('headerLoginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
-
     if (user) {
         headerLoginBtn?.classList.add('hidden');
         logoutBtn?.classList.remove('hidden');
@@ -61,7 +63,6 @@ async function checkAuth() {
 
     const roleBadge = document.getElementById('userRoleBadge');
     const roleBadgeMobile = document.getElementById('userRoleBadgeMobile');
-
     const updateBadge = (badge) => {
         if (!badge) return;
         if (isAdmin) {
@@ -75,9 +76,24 @@ async function checkAuth() {
             badge.className = 'badge badge-pending';
         }
     };
-
     updateBadge(roleBadge);
     updateBadge(roleBadgeMobile);
+
+    return { user, isAdmin };
+}
+
+// Auto-sync UI on load as soon as app.js runs
+syncAdminUI();
+
+async function checkAuth() {
+    // Sync UI instantly from cache first
+    syncAdminUI();
+
+    // Then verify with real server data
+    const user = await window.auth.getCurrentUser();
+
+    // Sync UI again with fresh data
+    syncAdminUI();
 
     return user;
 }
