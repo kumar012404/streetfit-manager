@@ -60,17 +60,12 @@
             submitBtn.textContent = isLogin ? 'Sign In' : 'Sign Up';
             toggleBtn.textContent = isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In";
             errorDiv.classList.add('hidden');
-
-            // Show/Hide admin checkbox ONLY on signup
-            document.getElementById('adminToggleGroup').classList.toggle('hidden', isLogin);
-            if (isLogin) document.getElementById('isAdminCheck').checked = false;
         });
 
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const isAdminRequest = document.getElementById('isAdminCheck').checked;
 
             errorDiv.classList.add('hidden');
             submitBtn.disabled = true;
@@ -86,7 +81,7 @@
 
                 const authCall = isLogin
                     ? window.auth.login(username, password)
-                    : window.auth.signup(username, password, isAdminRequest ? 'admin' : 'partner');
+                    : window.auth.signup(username, password);
 
                 result = await Promise.race([authCall, timeoutPromise]);
 

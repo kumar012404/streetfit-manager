@@ -128,9 +128,10 @@ async function getCurrentUser() {
                     if (doc.exists) {
                         profileData = doc.data();
                     } else {
-                        // FIX: Detect if this is the admin user
+                        // FIX: Detect if this is the first user if profile is missing
+                        const profilesSnap = await firebaseDB.collection('profiles').limit(1).get();
+                        const role = profilesSnap.empty ? 'admin' : 'partner';
                         const username = user.email.split('@')[0];
-                        const role = (username === 'admin') ? 'admin' : 'partner';
 
                         profileData = { id: user.uid, username: username, role: role };
                         // Self-healing: Create the missing profile doc with correct role
