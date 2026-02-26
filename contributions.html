@@ -175,7 +175,9 @@
             if (!profiles || !contribs) return;
 
             const partnerList = document.getElementById('partnerList');
-            partnerList.innerHTML = profiles.map(p => {
+            // Only show profiles that are active team members (admin or partner)
+            const activeProfiles = profiles.filter(p => p.role === 'admin' || p.role === 'partner');
+            partnerList.innerHTML = activeProfiles.map(p => {
                 const isUserAdmin = p.role === 'admin';
                 const total = contribs
                     .filter(c => c.profiles?.username === p.username)
@@ -186,12 +188,6 @@
                     <div class="flex-between" style="padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
                         <div>
                             <span style="font-weight: 500;">${capitalized} ${isUserAdmin ? '<small style="color: var(--accent);">(Admin)</small>' : ''}</span>
-                            ${isAdmin && !isUserAdmin ? `
-                                <button class="btn btn-ghost" style="width: auto; min-height: auto; padding: 2px 8px; font-size: 0.65rem; margin-left: 0.5rem; color: var(--accent); border: 1px solid var(--accent);" 
-                                    onclick="promotePartner('${p.id}', '${capitalized}')">
-                                    <i class="fas fa-user-shield"></i> Make Admin
-                                </button>
-                            ` : ''}
                         </div>
                         <span style="font-weight: 700; color: ${total > 0 ? 'var(--primary)' : 'var(--text-muted)'};">
                             ₹${total.toLocaleString()}

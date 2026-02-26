@@ -68,8 +68,6 @@
                 </div>
             </header>
 
-            </header>
-
             <div id="guestJoinBanner" class="card"
                 style="display: none; padding: 4rem 2rem; text-align: center; background: white; border: 1px solid var(--border); margin: 2rem 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <div
@@ -115,8 +113,7 @@
                     </div>
                 </div>
             </div>
-    </div>
-    </main>
+        </main>
     </div>
 
     <!-- Add Member Modal -->
@@ -170,15 +167,7 @@
     <script src="firebase-config.js"></script>
     <script src="app.js"></script>
     <script>
-        async function loadTeam() {
-            const user = await checkAuth();
-            if (!user) return;
-            const isAdmin = user.profile?.role === 'admin';
-
-            const { data: allProfiles } = await window.db.getProfiles();
-            if (!allProfiles) return;
-
-            const isAdminPage = isAdmin;
+        function renderTeamUI(allProfiles, isAdmin, currentUserId) {
             const teamList = document.getElementById('teamList');
             const pendingList = document.getElementById('pendingList');
             const pendingContainer = document.getElementById('pendingContainer');
@@ -207,7 +196,7 @@
             // 2. Handle Approved Users
             const approvedProfiles = allProfiles.filter(p => p.role === 'admin' || p.role === 'partner');
             teamList.innerHTML = approvedProfiles.sort((a, b) => (a.username || '').localeCompare(b.username)).map(p => {
-                const isSelf = p.id === user.id;
+                const isSelf = p.id === currentUserId;
                 const isUserAdmin = p.role === 'admin';
                 const capitalized = (p.username || 'Unknown').charAt(0).toUpperCase() + (p.username || 'Unknown').slice(1);
 
@@ -235,6 +224,32 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // Load cached team data instantly on page load
+        function loadTeamCache() {
+            const cachedProfiles = localStorage.getItem('sf_team_cache');
+            const userCache = JSON.parse(sessionStorage.getItem('sf_user_cache') || 'null');
+            if (cachedProfiles && userCache) {
+                const isAdmin = userCache?.profile?.role === 'admin';
+                renderTeamUI(JSON.parse(cachedProfiles), isAdmin, userCache.id);
+            }
+        }
+
+        async function loadTeam() {
+            loadTeamCache(); // Show cached data instantly
+
+            const user = await checkAuth();
+            if (!user) return;
+            const isAdmin = user.profile?.role === 'admin';
+
+            const { data: allProfiles } = await window.db.getProfiles();
+            if (!allProfiles) return;
+
+            renderTeamUI(allProfiles, isAdmin, user.id);
+
+            // Save to cache for next load
+            localStorage.setItem('sf_team_cache', JSON.stringify(allProfiles));
         }
 
         async function toggleAdminRole(uid, name, isAdmin) {

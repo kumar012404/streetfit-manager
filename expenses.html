@@ -48,7 +48,8 @@
             <header class="flex-between" style="margin-bottom: 2rem;">
                 <h1>Expenses</h1>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <button class="btn btn-primary" style="width: auto;" onclick="showModal('addExpenseModal')">
+                    <button id="addExpenseBtn" class="btn btn-primary" style="width: auto;"
+                        onclick="showModal('addExpenseModal')">
                         <i class="fas fa-plus"></i> Add Expense
                     </button>
                     <div class="profile-container hide-mobile">
@@ -207,9 +208,16 @@
             loadExpensesCache();
             const user = await checkAuth();
             const { data: expenses } = await window.db.getExpenses();
-            if (!expenses) return;
 
-            const isAdmin = user && user.profile?.role === 'admin';
+            const role = user?.profile?.role;
+            const isGuest = role === 'guest' || role === 'pending';
+            const isAdmin = role === 'admin';
+
+            // Hide add button for guests/pending users
+            const addBtn = document.getElementById('addExpenseBtn');
+            if (addBtn && isGuest) addBtn.style.display = 'none';
+
+            if (!expenses) return;
             renderExpensesList(expenses, isAdmin);
             localStorage.setItem('sf_expenses_cache', JSON.stringify(expenses));
         }

@@ -52,6 +52,7 @@ async function login(username, password) {
         localStorage.removeItem('sf_contribs_cache');
         localStorage.removeItem('sf_expenses_cache');
         localStorage.removeItem('sf_plans_cache');
+        localStorage.removeItem('sf_team_cache');
 
         return { data: result, error: null };
     } catch (err) {
@@ -121,6 +122,7 @@ async function logout() {
         localStorage.removeItem('sf_contribs_cache');
         localStorage.removeItem('sf_expenses_cache');
         localStorage.removeItem('sf_plans_cache');
+        localStorage.removeItem('sf_team_cache');
         window.location.href = 'auth.html';
     } catch (err) {
         console.error('Logout error:', err);

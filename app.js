@@ -57,7 +57,11 @@ function syncAdminUI() {
 
     if (user && (user.profile?.role === 'guest' || user.profile?.role === 'pending')) {
         const isPending = user.profile?.role === 'pending';
-        if (guestBanner) {
+        // On dashboard (index.html), initDashboard() handles banners with admin-exists check.
+        // On other pages, syncAdminUI handles it directly.
+        const isOnDashboard = document.getElementById('dashboardContent');
+
+        if (guestBanner && !isOnDashboard) {
             guestBanner.style.display = 'block';
             if (isPending) {
                 const title = document.getElementById('guestBannerTitle');
@@ -107,19 +111,22 @@ function syncAdminUI() {
     const roleBadgeMobile = document.getElementById('userRoleBadgeMobile');
     const updateBadge = (badge) => {
         if (!badge) return;
+        const username = user?.profile?.username;
+        const capitalized = username ? username.charAt(0).toUpperCase() + username.slice(1) : '';
+
         if (isAdmin) {
-            badge.textContent = 'Admin';
+            badge.textContent = capitalized ? `${capitalized} · Admin` : 'Admin';
             badge.className = 'badge badge-approved';
         } else if (user) {
             const role = user.profile?.role;
             if (role === 'pending') {
-                badge.textContent = 'Pending Approval';
+                badge.textContent = capitalized ? `${capitalized} · Pending` : 'Pending Approval';
                 badge.className = 'badge badge-pending';
             } else if (role === 'guest') {
-                badge.textContent = 'Guest';
+                badge.textContent = capitalized ? `${capitalized} · Guest` : 'Guest';
                 badge.className = 'badge badge-pending';
             } else {
-                badge.textContent = user.profile?.username || 'Partner';
+                badge.textContent = capitalized ? `${capitalized} · Partner` : 'Partner';
                 badge.className = 'badge badge-approved';
             }
         } else {

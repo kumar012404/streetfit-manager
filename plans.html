@@ -52,7 +52,7 @@
                         Track and complete your brand tasks</p>
                 </div>
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button class="btn btn-primary" style="width: auto; padding-inline: 1.5rem;"
+                    <button id="addPlanBtn" class="btn btn-primary" style="width: auto; padding-inline: 1.5rem;"
                         onclick="showModal('addPlanModal')">
                         <i class="fas fa-plus"></i> New Task
                     </button>
@@ -262,7 +262,14 @@
 
             const user = await checkAuth();
             currentUser = user;
-            const isAdmin = user && user.profile && user.profile.role === 'admin';
+            const role = user?.profile?.role;
+            const isAdmin = role === 'admin';
+            const isGuest = role === 'guest' || role === 'pending';
+
+            // Hide add button for guests/pending
+            const addBtn = document.getElementById('addPlanBtn');
+            if (addBtn && isGuest) addBtn.style.display = 'none';
+            // Hide add button, restrict plans from guests - content is hidden by app.js banner
 
             const [
                 { data: plans, error },

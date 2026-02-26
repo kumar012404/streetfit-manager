@@ -181,22 +181,23 @@
                     </p>
                 </div>
 
-                <!-- Create Team Banner (Shown only to Partners) -->
-                <div id="createTeamBanner" class="card"
-                    style="display: none; background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; border: none; margin-top: 2rem;">
-                    <div class="flex-between" style="flex-wrap: wrap; gap: 1rem;">
-                        <div>
-                            <h2 style="color: white; margin-bottom: 0.25rem;">Start Your Business Team</h2>
-                            <p style="opacity: 0.9; font-size: 0.875rem;">Create a team to manage budgets, expenses, and
-                                partners.</p>
-                        </div>
-                        <button class="btn"
-                            style="background: white; color: var(--accent); width: auto; padding: 0.75rem 1.5rem;"
-                            onclick="handleCreateTeam()">
-                            <i class="fas fa-plus"></i> Create Team Now
-                        </button>
+            </div>
+            <!-- Create Team Banner: shown OUTSIDE dashboardContent so guests can see it when no admin exists yet -->
+            <div id="createTeamBanner" class="card"
+                style="display: none; background: linear-gradient(135deg, var(--accent), #1d4ed8); color: white; border: none; margin-top: 2rem;">
+                <div class="flex-between" style="flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 style="color: white; margin-bottom: 0.25rem;">Start Your Business Team</h2>
+                        <p style="opacity: 0.9; font-size: 0.875rem;">You're the first member! Set up the workspace to
+                            manage budgets, expenses, and partners.</p>
                     </div>
+                    <button class="btn"
+                        style="background: white; color: var(--accent); width: auto; padding: 0.75rem 1.5rem;"
+                        onclick="handleCreateTeam()">
+                        <i class="fas fa-plus"></i> Create Team Now
+                    </button>
                 </div>
+            </div>
         </main>
     </div>
 
@@ -406,31 +407,39 @@
 
             if (isAdmin) document.getElementById('editBudgetIcon')?.classList.remove('hidden');
 
+            // Determine if any admin already exists in the system
+            const anyAdminExists = allProfiles && allProfiles.some(p => p.role === 'admin');
+
             // Handle Visibility based on Role
             const guestBanner = document.getElementById('guestJoinBanner');
             const dashContent = document.getElementById('dashboardContent');
+            const createTeamBanner = document.getElementById('createTeamBanner');
 
             if (isGuest || isPending) {
-                guestBanner.style.display = 'block';
                 dashContent.style.display = 'none';
 
                 if (isPending) {
+                    // Pending: waiting for admin approval
+                    guestBanner.style.display = 'block';
+                    if (createTeamBanner) createTeamBanner.style.display = 'none';
                     document.getElementById('guestBannerTitle').textContent = "Request Pending";
                     document.getElementById('guestBannerText').textContent = "Your request to join the StreetFit team is awaiting administrator approval. Please check back later.";
                     document.getElementById('joinTeamBtn').classList.add('hidden');
                     document.getElementById('pendingStatus').classList.remove('hidden');
+                } else if (!anyAdminExists) {
+                    // Guest + No admin exists yet → First user! Show "Create Team"
+                    guestBanner.style.display = 'none';
+                    if (createTeamBanner) createTeamBanner.style.display = 'block';
+                } else {
+                    // Guest + Admin already exists → Show "Join Team" request flow
+                    guestBanner.style.display = 'block';
+                    if (createTeamBanner) createTeamBanner.style.display = 'none';
                 }
             } else {
+                // Approved member (admin or partner): show dashboard, hide banners
                 guestBanner.style.display = 'none';
+                if (createTeamBanner) createTeamBanner.style.display = 'none';
                 dashContent.style.display = 'block';
-            }
-
-            // Handle "Create Team" banner visibility: Only show if NO team (no admin) exists yet
-            const anyAdminExists = allProfiles && allProfiles.some(p => p.role === 'admin');
-            const banner = document.getElementById('createTeamBanner');
-            if (banner) {
-                // Show only if no admin exists AND current user is not already an admin
-                banner.style.display = (!anyAdminExists && !isAdmin && user) ? 'block' : 'none';
             }
 
             // Calculations
@@ -446,9 +455,9 @@
             const finalBudget = manualBudget > 0 ? manualBudget : plansSum;
             const readiness = finalBudget > 0 ? Math.min(Math.round((balance / finalBudget) * 100), 100) : 100;
 
-            // Personal Split Calculations
-            const partners = (allProfiles || []).filter(p => p.role === 'partner');
-            const partnerCount = partners.length || 1;
+            // Personal Split Calculations (Admin is also a team member)
+            const teamMembers = (allProfiles || []).filter(p => p.role === 'partner' || p.role === 'admin');
+            const partnerCount = teamMembers.length || 1;
             const personalShare = finalBudget / partnerCount;
             const userContributions = (contributions || []).filter(c => c.partner_id === user?.id);
             const totalUserPaid = userContributions.reduce((sum, c) => sum + c.amount, 0);
@@ -460,7 +469,7 @@
                 owner_uid: user?.id,
                 totalCapital, approvedExp, pendingExpVal, balance,
                 activePlansCount: activePlans.length, finalBudget, readiness,
-                showPersonal: user && user.profile && user.profile.role === 'partner',
+                showPersonal: user && user.profile && (user.profile.role === 'partner' || user.profile.role === 'admin'),
                 personalShare, totalUserPaid, partnerCount, paidPercent, remaining
             };
 
