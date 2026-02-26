@@ -59,22 +59,23 @@ async function login(username, password) {
     }
 }
 
-async function signup(username, password) {
+async function signup(username, password, role = null) {
     const email = username.includes('@') ? username : `${username.toLowerCase()}@streetfit.local`;
     try {
         const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
         const user = result.user;
 
-        // Check if this is the first user (make them admin)
-        const profilesSnap = await firebaseDB.collection('profiles').limit(1).get();
-        const isFirstUser = profilesSnap.empty;
+        // If no role provided, check if first user (auto-admin)
+        if (!role) {
+            const profilesSnap = await firebaseDB.collection('profiles').limit(1).get();
+            role = profilesSnap.empty ? 'admin' : 'partner';
+        }
 
-        // Create profile document
         const profileData = {
             id: user.uid,
             email: email,
             username: username.toLowerCase(),
-            role: isFirstUser ? 'admin' : 'partner',
+            role: role,
             created_at: firebase.firestore.FieldValue.serverTimestamp()
         };
         await firebaseDB.collection('profiles').doc(user.uid).set(profileData);
