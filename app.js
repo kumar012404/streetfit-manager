@@ -41,34 +41,16 @@ async function checkAuth() {
         }
     });
 
-    // Handle Login/Portal buttons
-    const partnerLoginBtn = document.getElementById('adminLoginBtn');
-    const adminPortalBtn = document.getElementById('adminPortalBtn');
+    // Handle Logic/UI
     const headerLoginBtn = document.getElementById('headerLoginBtn');
-    const logoutBtn = document.querySelector('button[onclick="window.auth.logout()"]');
+    const logoutBtn = document.getElementById('logoutBtn');
 
     if (user) {
-        partnerLoginBtn?.classList.add('hidden');
         headerLoginBtn?.classList.add('hidden');
         logoutBtn?.classList.remove('hidden');
-
-        const role = user.profile?.role || 'partner';
-        if (role === 'partner') {
-            if (adminPortalBtn) {
-                adminPortalBtn.classList.remove('hidden');
-                adminPortalBtn.innerHTML = '<i class="fas fa-user-shield" style="margin-right: 0.75rem;"></i> Switch to Admin';
-            }
-        } else {
-            adminPortalBtn?.classList.add('hidden');
-        }
     } else {
-        partnerLoginBtn?.classList.remove('hidden');
         headerLoginBtn?.classList.remove('hidden');
         logoutBtn?.classList.add('hidden');
-        if (adminPortalBtn) {
-            adminPortalBtn.classList.remove('hidden');
-            adminPortalBtn.innerHTML = '<i class="fas fa-user-shield" style="margin-right: 0.75rem;"></i> Admin Access';
-        }
     }
 
     const roleBadge = document.getElementById('userRoleBadge');
