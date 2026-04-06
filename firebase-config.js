@@ -505,12 +505,52 @@ async function updateSetting(key, value) {
     }
 }
 
+async function getSponsors() {
+    try {
+        const snap = await firebaseDB.collection('sponsors').orderBy('created_at', 'desc').get();
+        return { data: snap.docs.map(doc => ({ id: doc.id, ...doc.data() })), error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function addSponsor(payload) {
+    try {
+        await firebaseDB.collection('sponsors').add({
+            ...payload,
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        return { data: true, error: null };
+    } catch (err) {
+        return { data: null, error: { message: err.message } };
+    }
+}
+
+async function updateSponsor(id, payload) {
+    try {
+        await firebaseDB.collection('sponsors').doc(id).update(payload);
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
+async function deleteSponsor(id) {
+    try {
+        await firebaseDB.collection('sponsors').doc(id).delete();
+        return { error: null };
+    } catch (err) {
+        return { error: { message: err.message } };
+    }
+}
+
 // ========== GLOBAL EXPORTS ==========
 window.auth = { login, signup, logout, getCurrentUser, createMember, createTeam, claimAdminRole, updateUserRole, joinTeam, approveMember };
 window.db = {
     getContributions, addContribution, deleteContribution, updateContribution,
     getExpenses, addExpense, updateExpenseStatus, deleteExpense, updateExpense,
     getPlans, addPlan, completePlan, deletePlan, updatePlan,
+    getSponsors, addSponsor, updateSponsor, deleteSponsor,
     getProfileByUsername, getProfiles,
     getSetting, updateSetting
 };

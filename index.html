@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StreetFit | Business Manager</title>
+    <link rel="shortcut icon" type="image/jpeg" href="logo.jpeg?v=4">
+    <link rel="apple-touch-icon" href="logo.jpeg?v=4">
+    <link rel="icon" type="image/jpeg" href="logo.jpeg?v=4">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -42,6 +45,7 @@
                 Contributions</a>
             <a href="expenses.html" class="nav-link"><i class="fas fa-receipt"></i> Expenses</a>
             <a href="plans.html" class="nav-link"><i class="fas fa-tasks"></i> Plans</a>
+            <a href="sponsors.html" class="nav-link"><i class="fas fa-handshake"></i> Sponsors</a>
             <a href="team.html" class="nav-link"><i class="fas fa-users-cog"></i> Manage Team</a>
 
             <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--border);">
@@ -126,8 +130,8 @@
                         <div class="value" id="approvedExpenses" style="color: var(--danger);">₹0</div>
                     </div>
                     <div class="card stat-card">
-                        <h3>Pending Expenses</h3>
-                        <div class="value" id="pendingExpenses" style="color: var(--warning);">₹0</div>
+                        <h3 style="color: var(--accent);">Total Sponsorship</h3>
+                        <div class="value" id="totalSponsorship" style="color: var(--accent);">₹0</div>
                     </div>
                     <div class="card stat-card"
                         style="border: 1px solid var(--accent); background: rgba(59, 130, 246, 0.05);">
@@ -203,11 +207,21 @@
 
     <!-- Report Selection Modal -->
     <div id="reportModal" class="hidden"
-        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
-        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: flex-start; justify-content: center; padding: 1rem; overflow-y: auto;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-top: auto; margin-bottom: auto;">
             <h3>Monthly Financial Report</h3>
             <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Select month and year to
                 generate summary.</p>
+            <div class="form-group">
+                <label>Report Type</label>
+                <select id="reportType">
+                    <option value="full">Comprehensive Full Report</option>
+                    <option value="expenses">Detailed Expenses Only</option>
+                    <option value="contributions">Detailed Contributions Only</option>
+                    <option value="partners">Partner Shares & Standing Only</option>
+                    <option value="statement">Partner Statement (Contribs + Standing)</option>
+                </select>
+            </div>
             <div class="form-group">
                 <label>Report Period</label>
                 <select id="reportPeriod" onchange="toggleReportPeriodFields()">
@@ -239,6 +253,19 @@
                     <input type="number" id="reportYear" value="2025">
                 </div>
             </div>
+            <div class="premium-option-row">
+                <div class="premium-label-area">
+                    <div class="premium-icon-box">✨</div>
+                    <div>
+                        <p class="premium-text-primary">Executive Dark Theme</p>
+                        <p class="premium-text-secondary">Premium high-contrast report</p>
+                    </div>
+                </div>
+                <label class="premium-switch">
+                    <input type="checkbox" id="pdfDarkMode">
+                    <span class="premium-slider"></span>
+                </label>
+            </div>
             <div class="flex-between" style="gap: 1rem;">
                 <button type="button" class="btn btn-ghost" onclick="hideModal('reportModal')">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="generatePDFReport()">Download PDF</button>
@@ -248,8 +275,8 @@
 
     <!-- Edit Budget Modal -->
     <div id="editBudgetModal" class="hidden"
-        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
-        <div class="card" style="width: 100%; max-width: 400px; margin-bottom: 0;">
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; display: flex; align-items: flex-start; justify-content: center; padding: 1rem; overflow-y: auto;">
+        <div class="card" style="width: 100%; max-width: 400px; margin-top: auto; margin-bottom: auto;">
             <h3>Update Total Budget</h3>
             <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">Set your overall financial
                 goal for the business.</p>
@@ -268,26 +295,12 @@
 
     <!-- Bottom Nav (Mobile) -->
     <nav class="bottom-nav">
-        <a href="index.html" class="bottom-nav-item active">
-            <i class="fas fa-chart-line"></i>
-            <span>Dash</span>
-        </a>
-        <a href="expenses.html" class="bottom-nav-item">
-            <i class="fas fa-receipt"></i>
-            <span>Exp</span>
-        </a>
-        <a href="plans.html" class="bottom-nav-item">
-            <i class="fas fa-tasks"></i>
-            <span>Plans</span>
-        </a>
-        <a href="team.html" class="bottom-nav-item">
-            <i class="fas fa-users-cog"></i>
-            <span>Team</span>
-        </a>
-        <a href="contributions.html" class="bottom-nav-item">
-            <i class="fas fa-hand-holding-usd"></i>
-            <span>Contribs</span>
-        </a>
+        <a href="index.html" class="bottom-nav-item active"><i class="fas fa-chart-line"></i><span>Dash</span></a>
+        <a href="expenses.html" class="bottom-nav-item"><i class="fas fa-receipt"></i><span>Exp</span></a>
+        <a href="plans.html" class="bottom-nav-item"><i class="fas fa-tasks"></i><span>Plans</span></a>
+        <a href="sponsors.html" class="bottom-nav-item"><i class="fas fa-handshake"></i><span>Sponsor</span></a>
+        <a href="team.html" class="bottom-nav-item"><i class="fas fa-users-cog"></i><span>Team</span></a>
+        <a href="contributions.html" class="bottom-nav-item"><i class="fas fa-hand-holding-usd"></i><span>Contribs</span></a>
     </nav>
 
     <!-- FAB -->
@@ -330,10 +343,10 @@
         function updateDashUI(data) {
             if (!data) return;
             document.getElementById('totalCapital').textContent = `₹${data.totalCapital.toLocaleString()}`;
+            document.getElementById('totalSponsorship').textContent = `₹${data.totalSponsors.toLocaleString()}`;
             document.getElementById('totalBudget').textContent = `₹${data.finalBudget.toLocaleString()}`;
             document.getElementById('approvedExpenses').textContent = `₹${data.approvedExp.toLocaleString()}`;
             document.getElementById('currentBalance').textContent = `₹${data.balance.toLocaleString()}`;
-            document.getElementById('pendingExpenses').textContent = `₹${data.pendingExpVal.toLocaleString()}`;
             document.getElementById('activePlans').textContent = data.activePlansCount;
 
             document.getElementById('readinessPercent').textContent = `${data.readiness}%`;
@@ -390,12 +403,14 @@
                 { data: expenses },
                 { data: plans },
                 { data: allProfiles },
+                { data: sponsors },
                 manualBudget
             ] = await Promise.all([
                 window.db.getContributions(),
                 window.db.getExpenses(),
                 window.db.getPlans(),
                 window.db.getProfiles(),
+                window.db.getSponsors(),
                 window.db.getSetting('target_budget')
             ]);
 
@@ -442,35 +457,63 @@
                 dashContent.style.display = 'block';
             }
 
-            // Calculations
-            const totalCapital = (contributions || []).reduce((sum, c) => sum + c.amount, 0);
-            const approvedExp = (expenses || []).filter(e => e.status === 'approved').reduce((sum, e) => sum + e.amount, 0);
-            const pendingExpVal = (expenses || []).filter(e => e.status === 'pending').reduce((sum, e) => sum + e.amount, 0);
-            const balance = totalCapital - approvedExp;
+            // Calculations - Explicitly convert everything to Number
+            let totalCap = 0;
+            if (Array.isArray(contributions)) {
+                contributions.forEach(c => totalCap += Number(c.amount || 0));
+            }
+            
+            let totalSpon = 0;
+            if (Array.isArray(sponsors)) {
+                sponsors.forEach(s => totalSpon += Number(s.amount || 0));
+            }
+            
+            let approvedEx = 0;
+            let pendingExVal = 0;
+            if (Array.isArray(expenses)) {
+                expenses.forEach(e => {
+                    const amt = Number(e.amount || 0);
+                    if (e.status === 'approved') approvedEx += amt;
+                    else if (e.status === 'pending') pendingExVal += amt;
+                });
+            }
+
+            const totalFunds = totalCap + totalSpon;
+            const balance = totalFunds - approvedEx;
 
             const activePlans = (plans || []).filter(p => p.status === 'pending');
-            const plansSum = activePlans.reduce((sum, p) => sum + p.estimated_cost, 0);
+            const plansSum = activePlans.reduce((sum, p) => sum + Number(p.estimated_cost || 0), 0);
 
             // Use manual budget if set, otherwise fallback to plans sum
-            const finalBudget = manualBudget > 0 ? manualBudget : plansSum;
+            const finalBudget = Number(manualBudget) > 0 ? Number(manualBudget) : plansSum;
             const readiness = finalBudget > 0 ? Math.min(Math.round((balance / finalBudget) * 100), 100) : 100;
 
-            // Personal Split Calculations (Admin is also a team member)
+            // Personal Split Calculations
             const teamMembers = (allProfiles || []).filter(p => p.role === 'partner' || p.role === 'admin');
             const partnerCount = teamMembers.length || 1;
             const personalShare = finalBudget / partnerCount;
             const userContributions = (contributions || []).filter(c => c.partner_id === user?.id);
-            const totalUserPaid = userContributions.reduce((sum, c) => sum + c.amount, 0);
+            const totalUserPaid = userContributions.reduce((sum, c) => sum + Number(c.amount || 0), 0);
             const remaining = Math.max(0, personalShare - totalUserPaid);
             const paidPercent = Math.min(100, Math.round((totalUserPaid / personalShare) * 100)) || 0;
 
             // Package data for cache & UI update
             const dashData = {
                 owner_uid: user?.id,
-                totalCapital, approvedExp, pendingExpVal, balance,
-                activePlansCount: activePlans.length, finalBudget, readiness,
+                totalCapital: totalCap,
+                totalSponsors: totalSpon,
+                approvedExp: approvedEx,
+                pendingExpVal: pendingExVal,
+                balance: balance,
+                activePlansCount: activePlans.length,
+                finalBudget: finalBudget,
+                readiness: readiness,
                 showPersonal: user && user.profile && (user.profile.role === 'partner' || user.profile.role === 'admin'),
-                personalShare, totalUserPaid, partnerCount, paidPercent, remaining
+                personalShare: personalShare,
+                totalUserPaid: totalUserPaid,
+                partnerCount: partnerCount,
+                paidPercent: paidPercent,
+                remaining: remaining
             };
 
             updateDashUI(dashData);
@@ -491,106 +534,243 @@
         }
 
         async function generatePDFReport() {
-            const period = document.getElementById('reportPeriod').value;
-            const month = parseInt(document.getElementById('reportMonth').value);
-            const year = parseInt(document.getElementById('reportYear').value);
+            const btn = document.querySelector('#reportModal .btn-primary');
+            const originalText = btn.innerHTML;
+            try {
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Generating...`;
 
-            const now = new Date();
-            let startDate = new Date(year, month, 1);
-            let endDate = new Date(year, month + 1, 0, 23, 59, 59);
-            let titleRange = "";
+                const type = document.getElementById('reportType').value;
+                const period = document.getElementById('reportPeriod').value;
+                const month = parseInt(document.getElementById('reportMonth').value);
+                const year = parseInt(document.getElementById('reportYear').value);
+                const isDark = document.getElementById('pdfDarkMode').checked;
 
-            if (period === 'last3') {
-                startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-                titleRange = "Last 3 Months";
-            } else if (period === 'last6') {
-                startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-                titleRange = "Last 6 Months";
-            } else {
-                titleRange = `${document.getElementById('reportMonth').options[month].text} ${year}`;
+                const now = new Date();
+                let startDate = new Date(year, month, 1);
+                let endDate = new Date(year, month + 1, 0, 23, 59, 59);
+                let titleRange = "";
+
+                if (period === 'last3') {
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                    titleRange = "Last 3 Months";
+                } else if (period === 'last6') {
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                    titleRange = "Last 6 Months";
+                } else {
+                    titleRange = `${document.getElementById('reportMonth').options[month].text} ${year}`;
+                }
+
+                // FETCH DATA + LOAD LOGO
+                const [
+                    { data: contribs },
+                    { data: expenses },
+                    { data: sponsors },
+                    { data: allProfiles },
+                    { data: latestPlans },
+                    manualBudget,
+                    logoImg
+                ] = await Promise.all([
+                    window.db.getContributions(),
+                    window.db.getExpenses(),
+                    window.db.getSponsors(),
+                    window.db.getProfiles(),
+                    window.db.getPlans(),
+                    window.db.getSetting('target_budget'),
+                    new Promise(resolve => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = () => resolve(null);
+                        img.src = 'bglogo.png';
+                    })
+                ]);
+
+                const filteredContribs = (contribs || []).filter(c => {
+                    const date = new Date(c.date);
+                    return date >= startDate && date <= endDate;
+                });
+                const filteredExpenses = (expenses || []).filter(e => {
+                    const date = e.created_at ? (e.created_at.toDate ? e.created_at.toDate() : new Date(e.created_at)) : null;
+                    return date && date >= startDate && date <= endDate;
+                });
+                const filteredSponsors = (sponsors || []).filter(s => {
+                    const dateRaw = s.date || s.created_at;
+                    const d = dateRaw ? (dateRaw.toDate ? dateRaw.toDate() : new Date(dateRaw)) : null;
+                    return d && d >= startDate && d <= endDate;
+                });
+
+                const totalIn = filteredContribs.reduce((sum, c) => sum + Number(c.amount || 0), 0);
+                const totalSponsorIn = filteredSponsors.reduce((sum, s) => sum + Number(s.amount || 0), 0);
+                const totalOut = filteredExpenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                const renderPageTemplate = (d) => {
+                    if (isDark) {
+                        d.setFillColor(15, 23, 42); // Deep slate
+                        d.rect(0, 0, 210, 297, 'F');
+                    }
+                    if (logoImg) {
+                        try { d.addImage(logoImg, 'PNG', 165, 8, 30, 30); } catch (e) {}
+                    }
+                    
+                    const textColor = isDark ? [248, 250, 252] : [15, 23, 42];
+                    const mutedColor = isDark ? [148, 163, 184] : [100, 116, 139];
+
+                    d.setFontSize(22);
+                    d.setTextColor(...textColor);
+                    d.text('StreetFit Business Report', 14, 20);
+                    d.setFontSize(10);
+                    d.setTextColor(...mutedColor);
+                    d.text(`Summary: ${titleRange} | Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+                    d.setDrawColor(...mutedColor);
+                    d.line(14, 40, 196, 40);
+                };
+
+                // CRITICAL: Draw background on every page addition to prevent covering content
+                doc.addPage = (function(addPage) {
+                    return function() {
+                        addPage.apply(this, arguments);
+                        renderPageTemplate(this);
+                    };
+                })(doc.addPage);
+
+                // INITIAL PAGE SETUP
+                renderPageTemplate(doc);
+                let currentY = 48;
+
+                const tableOptions = {
+                    theme: isDark ? 'grid' : 'striped',
+                    headStyles: { fillColor: isDark ? [30, 64, 175] : [15, 23, 42], textColor: [255, 255, 255] },
+                    bodyStyles: isDark ? { fillColor: [30, 41, 59], textColor: [248, 250, 252] } : { textColor: [15, 23, 42] },
+                    alternateRowStyles: isDark ? { fillColor: [38, 50, 71] } : {},
+                    margin: { top: 40 }
+                };
+
+                // Summary
+                if (type === 'full') {
+                    doc.autoTable({
+                        ...tableOptions,
+                        startY: currentY,
+                        head: [['Category', 'Amount (INR)']],
+                        body: [
+                            ['Partner Contributions', totalIn.toLocaleString('en-IN')],
+                            ['Sponsorship (External)', totalSponsorIn.toLocaleString('en-IN')],
+                            ['Approved Expenses', totalOut.toLocaleString('en-IN')],
+                            ['Net Savings', (totalIn + totalSponsorIn - totalOut).toLocaleString('en-IN')]
+                        ],
+                        headStyles: { fillColor: [59, 130, 246] },
+                        showFoot: 'lastPage'
+                    });
+                    currentY = doc.lastAutoTable.finalY + 12;
+                }
+
+                // Partners
+                if (type === 'full' || type === 'partners' || type === 'statement') {
+                    const teamMembers = (allProfiles || []).filter(p => p.role === 'partner' || p.role === 'admin');
+                    const partnerCount = teamMembers.length || 1;
+                    const plansSum = (latestPlans || []).filter(p => p.status === 'pending').reduce((s, p) => s + Number(p.estimated_cost || 0), 0);
+                    const finalBudget = Number(manualBudget) > 0 ? Number(manualBudget) : plansSum;
+                    const shareTarget = finalBudget / partnerCount;
+
+                    if (currentY > 230) { doc.addPage(); currentY = 48; }
+                    doc.setFontSize(14);
+                    doc.setTextColor(isDark ? 248 : 15, isDark ? 250 : 23, isDark ? 252 : 42);
+                    doc.text('Partner Standing', 14, currentY);
+                    currentY += 6;
+
+                    const pData = teamMembers.map(p => {
+                        const paid = (contribs || []).filter(c => c.partner_id === p.id).reduce((s, c) => s + Number(c.amount || 0), 0);
+                        return [p.username || 'Err', shareTarget.toLocaleString('en-IN'), paid.toLocaleString('en-IN'), Math.max(0, shareTarget - paid).toLocaleString('en-IN')];
+                    });
+
+                    doc.autoTable({
+                        ...tableOptions,
+                        startY: currentY,
+                        head: [['Partner', 'Target', 'Paid', 'Due']],
+                        body: pData,
+                        showFoot: 'lastPage'
+                    });
+
+                    const totalSponsorship = (sponsors || []).reduce((s, x) => s + Number(x.amount || 0), 0);
+                    const totalCapital = (contribs || []).reduce((sum, x) => sum + Number(x.amount || 0), 0);
+                    const totalDue = pData.reduce((sum, r) => sum + Number(r[3].replace(/,/g, '')), 0);
+
+                    currentY = doc.lastAutoTable.finalY + 10;
+                    doc.setFontSize(10);
+                    doc.setTextColor(isDark ? 148 : 100, isDark ? 163 : 116, isDark ? 184 : 139);
+                    doc.text(`Paid: INR ${totalCapital.toLocaleString('en-IN')} | Sponsors: INR ${totalSponsorship.toLocaleString('en-IN')}`, 14, currentY);
+                    doc.setFontSize(11);
+                    doc.setTextColor(isDark ? 248 : 15, isDark ? 250 : 23, isDark ? 252 : 42);
+                    doc.text(`Cash In Hand: INR ${(totalCapital + totalSponsorship).toLocaleString('en-IN')}`, 14, currentY + 6);
+
+                    if (totalDue > 0) {
+                        doc.setTextColor(239, 68, 68);
+                        doc.text(`Total Due: INR ${totalDue.toLocaleString('en-IN')}`, 14, currentY + 12);
+                        currentY += 20;
+                    } else {
+                        doc.setTextColor(isDark ? 34 : 22, isDark ? 197 : 163, isDark ? 94 : 74);
+                        doc.text(`Dues Cleared!`, 14, currentY + 12);
+                        currentY += 20;
+                    }
+                }
+
+                // Contributions List
+                if (type === 'full' || type === 'contributions' || type === 'statement') {
+                    if (currentY > 230) { doc.addPage(); currentY = 48; }
+                    doc.setFontSize(14);
+                    doc.setTextColor(isDark ? 248 : 15, isDark ? 250 : 23, isDark ? 252 : 42);
+                    doc.text('Detailed Contributions', 14, currentY);
+                    currentY += 6;
+
+                    doc.autoTable({
+                        ...tableOptions,
+                        startY: currentY,
+                        head: [['Date', 'Partner', 'Amount (INR)']],
+                        body: filteredContribs.map(c => [new Date(c.date).toLocaleDateString('en-IN'), c.profiles?.username || '?', Number(c.amount || 0).toLocaleString('en-IN')]),
+                        foot: [['', 'Grand Total Amount', totalIn.toLocaleString('en-IN')]],
+                        headStyles: { fillColor: [59, 130, 246] },
+                        footStyles: { fillColor: isDark ? [15, 23, 42] : [240, 240, 240], textColor: isDark ? [255, 255, 255] : [15, 23, 42], fontStyle: 'bold' },
+                        showFoot: 'lastPage'
+                    });
+                    currentY = doc.lastAutoTable.finalY + 12;
+                }
+
+                // Expenses List
+                if (type === 'full' || type === 'expenses') {
+                    if (currentY > 230) { doc.addPage(); currentY = 48; }
+                    doc.setFontSize(14);
+                    doc.setTextColor(isDark ? 248 : 15, isDark ? 250 : 23, isDark ? 252 : 42);
+                    doc.text('Detailed Expenses', 14, currentY);
+                    currentY += 6;
+
+                    doc.autoTable({
+                        ...tableOptions,
+                        startY: currentY,
+                        head: [['Date', 'Description', 'By', 'Amount (INR)']],
+                        body: filteredExpenses.map(e => {
+                            const d = e.created_at ? (e.created_at.toDate ? e.created_at.toDate() : new Date(e.created_at)) : null;
+                            return [d ? d.toLocaleDateString('en-IN') : '—', e.description, e.profiles?.username || 'Guest', Number(e.amount || 0).toLocaleString('en-IN')];
+                        }),
+                        foot: [['', '', 'Grand Total Amount', totalOut.toLocaleString('en-IN')]],
+                        headStyles: { fillColor: [220, 38, 38] },
+                        footStyles: { fillColor: isDark ? [15, 23, 42] : [240, 240, 240], textColor: [220, 38, 38], fontStyle: 'bold' },
+                        showFoot: 'lastPage'
+                    });
+                }
+
+                doc.save(`StreetFit_Report_${titleRange.replace(/ /g,'_')}.pdf`);
+                hideModal('reportModal');
+            } catch (err) {
+                console.error("PDF Export Error:", err);
+                alert("Error generating PDF: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
-
-            const { data: contribs } = await window.db.getContributions();
-            const { data: expenses } = await window.db.getExpenses();
-
-            const filteredContribs = (contribs || []).filter(c => {
-                const date = new Date(c.date);
-                return date >= startDate && date <= endDate;
-            });
-
-            const filteredExpenses = (expenses || []).filter(e => {
-                const date = new Date(e.created_at);
-                return date >= startDate && date <= endDate;
-            });
-
-            const totalIn = filteredContribs.reduce((sum, c) => sum + c.amount, 0);
-            const totalOut = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            // Header
-            doc.setFontSize(22);
-            doc.setTextColor(15, 23, 42); // --primary color
-            doc.text('StreetFit Business Report', 14, 20);
-
-            doc.setFontSize(12);
-            doc.setTextColor(100, 116, 139); // --text-muted
-            doc.text(`Financial Summary: ${titleRange}`, 14, 30);
-            doc.text(`Period: ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`, 14, 37);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 44);
-
-            // Summary Table
-            doc.autoTable({
-                startY: 52,
-                head: [['Category', 'Amount (INR)']],
-                body: [
-                    ['Total Contributions (In)', totalIn.toLocaleString()],
-                    ['Total Expenses (Out)', totalOut.toLocaleString()],
-                    ['Net Cash Flow', (totalIn - totalOut).toLocaleString()]
-                ],
-                theme: 'striped',
-                headStyles: { fillColor: [59, 130, 246] } // --accent
-            });
-
-            // Contributions Table
-            doc.setFontSize(14);
-            doc.setTextColor(15, 23, 42);
-            doc.text('Detailed Contributions', 14, doc.lastAutoTable.finalY + 15);
-
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 20,
-                head: [['Date', 'Partner', 'Amount (INR)']],
-                body: filteredContribs.map(c => [
-                    new Date(c.date).toLocaleDateString(),
-                    c.profiles?.username || 'Unknown',
-                    c.amount.toLocaleString()
-                ]),
-                theme: 'grid'
-            });
-
-            // Expenses Table
-            doc.setFontSize(14);
-            doc.text('Detailed Expenses', 14, doc.lastAutoTable.finalY + 15);
-
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 20,
-                head: [['Date', 'Description', 'By', 'Status', 'Amount (INR)']],
-                body: filteredExpenses.map(e => [
-                    new Date(e.created_at).toLocaleDateString(),
-                    e.description,
-                    e.profiles?.username || 'Guest',
-                    e.status.toUpperCase(),
-                    e.amount.toLocaleString()
-                ]),
-                theme: 'grid'
-            });
-
-            const safeTitle = titleRange.replace(/\s+/g, '_');
-            doc.save(`StreetFit_Report_${safeTitle}.pdf`);
-            hideModal('reportModal');
         }
 
         document.getElementById('budgetForm').addEventListener('submit', async (e) => {

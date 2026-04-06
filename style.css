@@ -892,3 +892,108 @@ select {
         max-width: 100% !important;
     }
 }
+
+/* Premium Toggle Switch for Reports */
+.premium-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.premium-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.premium-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #e2e8f0;
+    transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 34px;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.premium-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 3px;
+    background: white;
+    transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+input:checked + .premium-slider {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+    box-shadow: 0 0 15px rgba(15, 23, 42, 0.2);
+}
+
+input:checked + .premium-slider:before {
+    transform: translateX(22px);
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.premium-option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: rgba(99, 102, 241, 0.04);
+    border-radius: 1.25rem;
+    border: 2px solid rgba(99, 102, 241, 0.08);
+    margin: 1.5rem 0 2rem;
+    transition: all 0.3s ease;
+}
+
+.premium-option-row:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-color: rgba(99, 102, 241, 0.15);
+}
+
+.premium-label-area {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    text-align: left;
+}
+
+.premium-icon-box {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.premium-text-primary {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--primary);
+    margin: 0;
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.2;
+}
+
+.premium-text-secondary {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin: 0;
+    opacity: 0.8;
+}

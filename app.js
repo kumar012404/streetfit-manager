@@ -87,6 +87,14 @@ function syncAdminUI() {
                     <p style="color: var(--text-muted); margin-bottom: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
                         You must be a member of the team to view this page. Please go to the <a href="index.html" style="color:var(--accent); text-decoration:underline;">Dashboard</a> to join the team.
                     </p>
+                    <script>
+                        // Small auto-redirect for guests to avoid getting stuck on internal pages
+                        setTimeout(() => { 
+                            if (window.location.pathname.indexOf('index.html') === -1) {
+                                window.location.href = 'index.html'; 
+                            }
+                        }, 3000);
+                    </script>
                 </div>`;
             }
         }

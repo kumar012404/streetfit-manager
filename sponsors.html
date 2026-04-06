@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sponsors | StreetFit</title>
+    <meta name="description" content="Track sponsor amounts given to businesses from StreetFit partners.">
+    <link rel="shortcut icon" type="image/jpeg" href="logo.jpeg?v=4">
+    <link rel="apple-touch-icon" href="logo.jpeg?v=4">
+    <link rel="icon" type="image/jpeg" href="logo.jpeg?v=4">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        .sponsor-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .sponsor-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .sponsor-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .badge-active   { background: rgba(34,197,94,0.15); color: #16a34a; }
+        .badge-completed { background: rgba(59,130,246,0.15); color: #2563eb; }
+        .badge-pending  { background: rgba(245,158,11,0.15); color: #d97706; }
+
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .summary-tile {
+            background: white;
+            border-radius: 0.875rem;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .summary-tile .label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+        .summary-tile .val   { font-size: 1.25rem; font-weight: 800; }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            overflow-x: auto;
+            padding-bottom: 0.25rem;
+        }
+        .filter-tab {
+            padding: 0.4rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1.5px solid var(--border);
+            background: white;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            color: var(--text-muted);
+        }
+        .filter-tab.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .progress-thin {
+            height: 5px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-thin-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transition: width 0.5s ease;
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.3rem 0.4rem;
+            border-radius: 0.4rem;
+            transition: background 0.15s;
+            font-size: 0.85rem;
+        }
+        .icon-btn:hover { background: var(--border); }
+        .icon-btn.danger { color: var(--danger); }
+        .icon-btn.primary { color: var(--accent); }
+
+        .sponsor-header-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #1e40af 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .sponsor-header-gradient h2 { color: white; font-size: 1.25rem; margin: 0; }
+        .sponsor-header-gradient p  { color: rgba(255,255,255,0.7); font-size: 0.8rem; margin-top: 0.25rem; }
+        .sponsor-header-gradient .big-num { font-size: 2rem; font-weight: 800; color: #60a5fa; }
+
+        @media (max-width: 600px) {
+            .summary-strip { grid-template-columns: repeat(3, 1fr); }
+            .summary-tile .val { font-size: 1rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></div>
+    <div class="mobile-header-fix">
+        <div class="header-spacer"></div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; color: var(--primary);">StreetFit</h2>
+        <div class="profile-container">
+            <div class="profile-btn" onclick="document.getElementById('userRoleBadgeMobile').classList.toggle('show')">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div id="userRoleBadgeMobile" class="badge badge-pending">Partner</div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <nav class="sidebar" id="sidebar">
+            <div class="brand-area" style="margin-bottom: 2rem; padding: 0 1rem;">
+                <h2 style="color: white;">StreetFit</h2>
+            </div>
+            <a href="index.html" class="nav-link"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="expenses.html" class="nav-link"><i class="fas fa-receipt"></i> Expenses</a>
+            <a href="plans.html" class="nav-link"><i class="fas fa-tasks"></i> Plans</a>
+            <a href="sponsors.html" class="nav-link active"><i class="fas fa-handshake"></i> Sponsors</a>
+            <a href="team.html" class="nav-link"><i class="fas fa-users-cog"></i> Manage Team</a>
+            <a href="contributions.html" class="nav-link"><i class="fas fa-hand-holding-usd"></i> Contributions</a>
+            <div style="margin-top: auto; padding-top: 2rem; border-top: 1px solid var(--border);">
+                <button id="logoutBtn" onclick="window.auth.logout()" class="btn btn-ghost hidden"
+                    style="color: #ef4444; width: 100%; text-align: left; padding: 0.75rem 1rem;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <header class="flex-between" style="margin-bottom: 1.5rem;">
+                <h1>Sponsors</h1>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button id="addSponsorBtn" class="btn btn-primary" style="width: auto;" onclick="showModal('addSponsorModal')">
+                        <i class="fas fa-plus"></i> Add Sponsor
+                    </button>
+                    <div class="profile-container hide-mobile">
+                        <div class="profile-btn" onclick="document.getElementById('userRoleBadge').classList.toggle('show')">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div id="userRoleBadge" class="badge badge-pending">Partner</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Guest Banner -->
+            <div id="guestJoinBanner" class="card"
+                style="display: none; padding: 4rem 2rem; text-align: center;">
+                <div style="width: 80px; height: 80px; background: rgba(59,130,246,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: var(--accent);">
+                    <i class="fas fa-handshake" style="font-size: 2.5rem;"></i>
+                </div>
+                <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Sponsors Module</h2>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+                    You need to be a team member to view sponsor records.
+                </p>
+                <a href="index.html" class="btn btn-primary" style="width: auto; padding: 0.875rem 2.5rem; display: inline-block;">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <div id="sponsorsContent">
+
+                <!-- Summary Banner -->
+                <div class="sponsor-header-gradient" id="summaryBanner" style="display:none;">
+                    <div>
+                        <p style="margin:0; color:rgba(255,255,255,0.6); font-size:0.75rem; text-transform: uppercase; letter-spacing:1px;">Total Sponsored</p>
+                        <div class="big-num" id="totalSponsored">₹0</div>
+                        <p style="margin:0.25rem 0 0;">across <span id="sponsorCount">0</span> records</p>
+                    </div>
+                    <i class="fas fa-handshake" style="font-size: 3rem; opacity: 0.2;"></i>
+                </div>
+
+                <!-- List -->
+                <div id="sponsorList">
+                    <div style="text-align:center; color:var(--text-muted); padding:2rem;">
+                        <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i>
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== Add Sponsor Modal ===== -->
+    <div id="addSponsorModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 430px; margin-bottom: 0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <h3 style="margin:0;"><i class="fas fa-handshake" style="color:var(--accent);"></i> New Sponsorship</h3>
+                <button class="icon-btn" onclick="hideModal('addSponsorModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="sponsorForm">
+                <div class="form-group">
+                    <label>Sponsor Name</label>
+                    <input type="text" id="spName" required placeholder="Ex: Kumar, Rahul's Business">
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="spAmount" required placeholder="5000" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <textarea id="spNotes" placeholder="Any extra details..." rows="3" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border);"></textarea>
+                </div>
+                <div class="flex-between" style="gap:1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('addSponsorModal')">Cancel</button>
+                    <button type="submit" id="addSponsorSubmitBtn" class="btn btn-primary">Add Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== Edit Sponsor Modal ===== -->
+    <div id="editSponsorModal" class="hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1100; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="card" style="width: 100%; max-width: 430px; margin-bottom: 0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <h3 style="margin:0;"><i class="fas fa-edit" style="color:var(--accent);"></i> Edit Sponsorship</h3>
+                <button class="icon-btn" onclick="hideModal('editSponsorModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="editSponsorForm">
+                <input type="hidden" id="editSpId">
+                <div class="form-group">
+                    <label>Sponsor Name</label>
+                    <input type="text" id="editSpName" required>
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="editSpAmount" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <textarea id="editSpNotes" placeholder="Any extra details..." rows="3" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid var(--border);"></textarea>
+                </div>
+                <div class="flex-between" style="gap:1rem;">
+                    <button type="button" class="btn btn-ghost" onclick="hideModal('editSponsorModal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item"><i class="fas fa-chart-line"></i><span>Dash</span></a>
+        <a href="expenses.html" class="bottom-nav-item"><i class="fas fa-receipt"></i><span>Exp</span></a>
+        <a href="plans.html" class="bottom-nav-item"><i class="fas fa-tasks"></i><span>Plans</span></a>
+        <a href="sponsors.html" class="bottom-nav-item active"><i class="fas fa-handshake"></i><span>Sponsor</span></a>
+        <a href="team.html" class="bottom-nav-item"><i class="fas fa-users-cog"></i><span>Team</span></a>
+        <a href="contributions.html" class="bottom-nav-item"><i class="fas fa-hand-holding-usd"></i><span>Contribs</span></a>
+    </nav>
+
+    <script src="firebase-config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // ========== AVATAR COLORS ==========
+        const AVATAR_COLORS = ['#3b82f6','#8b5cf6','#ec4899','#f97316','#10b981','#06b6d4','#f59e0b','#ef4444'];
+        function avatarColor(name) {
+            let hash = 0;
+            for (let c of name) hash = (hash << 5) - hash + c.charCodeAt(0);
+            return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+        }
+        function initials(name) {
+            return name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() || '').join('').slice(0,2) || '?';
+        }
+
+        let allSponsors = [];
+        let currentFilter = 'all';
+        let isAdminUser = false;
+
+        // Instant Cache Loader for "Zero Wait" experience
+        function loadSponsorsCache() {
+            const cached = localStorage.getItem('sf_sponsors_cache');
+            if (cached) {
+                allSponsors = JSON.parse(cached);
+                updateSummary(allSponsors);
+                renderSponsors(allSponsors);
+            }
+        }
+
+        // ========== RENDER ==========
+        function renderSponsors(sponsors) {
+            const list = document.getElementById('sponsorList');
+            if (!sponsors || sponsors.length === 0) {
+                list.innerHTML = `
+                    <div style="text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+                        <i class="fas fa-handshake" style="font-size:2.5rem; opacity:0.3; margin-bottom:1rem; display:block;"></i>
+                        <p style="font-size:1rem; font-weight:600;">No sponsorships yet</p>
+                        <p style="font-size:0.85rem;">Click "Add Sponsor" to record your first one!</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = sponsors.map(s => {
+                const color = avatarColor(s.business_name);
+                const init = initials(s.business_name);
+                const statusClass = s.status === 'active' ? 'badge-active' : s.status === 'completed' ? 'badge-completed' : 'badge-pending';
+                const statusIcon = s.status === 'active' ? 'fa-circle-check' : s.status === 'completed' ? 'fa-flag-checkered' : 'fa-clock';
+                const date = s.date ? new Date(s.date).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—';
+                const hasReturn = s.expected_return && s.expected_return > 0;
+                const returnPercent = hasReturn ? Math.min(100, Math.round((s.amount / s.expected_return) * 100)) : 0;
+
+                return `
+                <div class="sponsor-card" id="sc-${s.id}">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+                        <div class="sponsor-avatar" style="background:${color};">${init}</div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:700; font-size:1.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.business_name}</div>
+                            <div style="font-size:1.3rem; font-weight:800; color:var(--accent); margin-top:0.25rem;">₹${s.amount.toLocaleString('en-IN')}</div>
+                        </div>
+                        ${isAdminUser ? `
+                        <div style="display:flex; gap:0.2rem;">
+                            <button class="icon-btn primary" onclick="openEditSponsor('${s.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                            <button class="icon-btn danger" onclick="removeSponsor('${s.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                        </div>` : ''}
+                    </div>
+
+                    ${s.notes ? `
+                    <div style="background:var(--bg-main); padding: 0.75rem; border-radius: 0.5rem; font-size:0.85rem; color:var(--text-muted); margin-bottom: 0.75rem; border-left: 3px solid var(--accent);">
+                        <i class="fas fa-quote-left" style="font-size:0.6rem; vertical-align:top; margin-right:4px; opacity:0.5;"></i>
+                        ${s.notes}
+                    </div>` : ''}
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:var(--text-muted);">
+                        <span><i class="fas fa-clock" style="margin-right:0.3rem;"></i>Record created on ${date}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateSummary(sponsors) {
+            const total = sponsors.reduce((s, x) => s + (x.amount || 0), 0);
+
+            document.getElementById('totalSponsored').textContent = `₹${total.toLocaleString('en-IN')}`;
+            document.getElementById('sponsorCount').textContent = sponsors.length;
+
+            if (sponsors.length > 0) {
+                document.getElementById('summaryBanner').style.display = 'flex';
+            }
+        }
+
+        function filterSponsors(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            const filtered = filter === 'all' ? allSponsors : allSponsors.filter(s => s.status === filter);
+            renderSponsors(filtered);
+        }
+
+        // ========== LOAD ==========
+        async function loadSponsors() {
+            // 1. Show cached data immediately
+            loadSponsorsCache();
+
+            // 2. Auth check in background
+            const user = await checkAuth();
+            const role = user?.profile?.role;
+            const isGuest = role === 'guest' || role === 'pending';
+            isAdminUser = role === 'admin';
+
+            if (isGuest) {
+                document.getElementById('guestJoinBanner').style.display = 'block';
+                document.getElementById('sponsorsContent').style.display = 'none';
+                document.getElementById('addSponsorBtn').style.display = 'none';
+                return;
+            }
+
+            if (!isAdminUser) {
+                document.getElementById('addSponsorBtn').style.display = 'none';
+            }
+
+            // 3. Fetch fresh data
+            const { data, error } = await window.db.getSponsors();
+            if (error) {
+                if (!allSponsors.length) {
+                    document.getElementById('sponsorList').innerHTML = `<div style="color:var(--danger);padding:1rem;">Error: ${error.message}</div>`;
+                }
+                return;
+            }
+
+            // 4. Update UI and Cache
+            allSponsors = data || [];
+            updateSummary(allSponsors);
+            renderSponsors(allSponsors);
+            localStorage.setItem('sf_sponsors_cache', JSON.stringify(allSponsors));
+        }
+
+        // ========== DELETE ==========
+        async function removeSponsor(id) {
+            if (!confirm('Delete this sponsorship record?')) return;
+            const { error } = await window.db.deleteSponsor(id);
+            if (error) alert('Error: ' + error.message);
+            else loadSponsors();
+        }
+
+        // ========== EDIT ==========
+        function openEditSponsor(id) {
+            const s = allSponsors.find(x => x.id === id);
+            if (!s) return;
+            document.getElementById('editSpId').value = id;
+            document.getElementById('editSpName').value = s.business_name;
+            document.getElementById('editSpAmount').value = s.amount;
+            document.getElementById('editSpNotes').value = s.notes || '';
+            showModal('editSponsorModal');
+        }
+
+        document.getElementById('editSponsorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editSpId').value;
+            const payload = {
+                business_name: document.getElementById('editSpName').value.trim(),
+                amount: parseFloat(document.getElementById('editSpAmount').value),
+                notes: document.getElementById('editSpNotes').value.trim()
+            };
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true; btn.textContent = 'Saving...';
+            const { error } = await window.db.updateSponsor(id, payload);
+            if (error) alert('Error: ' + error.message);
+            else { hideModal('editSponsorModal'); loadSponsors(); }
+            btn.disabled = false; btn.textContent = 'Save Changes';
+        });
+
+        // ========== ADD ==========
+        document.getElementById('sponsorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('addSponsorSubmitBtn');
+            btn.disabled = true; btn.textContent = 'Saving...';
+
+            const payload = {
+                business_name: document.getElementById('spName').value.trim(),
+                amount: parseFloat(document.getElementById('spAmount').value),
+                date: new Date().toISOString(), // Use Current Date
+                notes: document.getElementById('spNotes').value.trim()
+            };
+
+            const { error } = await window.db.addSponsor(payload);
+            if (error) {
+                alert('Failed: ' + error.message);
+            } else {
+                e.target.reset();
+                hideModal('addSponsorModal');
+                loadSponsors();
+            }
+            btn.disabled = false; btn.textContent = 'Add Record';
+        });
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        window.addEventListener('load', loadSponsors);
+    </script>
+</body>
+</html>
